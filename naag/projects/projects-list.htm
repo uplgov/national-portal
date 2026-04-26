@@ -1,1 +1,351 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>NAAG Projects</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
 
+    body {
+      font-family: system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
+      background: #f5f7fb;
+      color: #1a1f2e;
+      line-height: 1.4;
+    }
+
+    .container {
+      max-width: 1280px;
+      margin: 0 auto;
+      padding: 2rem 2rem 4rem 2rem;
+    }
+
+    /* header row: left + right */
+    .header-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      flex-wrap: wrap;
+      gap: 1.5rem;
+      margin-bottom: 3rem;
+      border-bottom: 2px solid #e2e8f0;
+      padding-bottom: 1.25rem;
+    }
+
+    .nav-area {
+      display: flex;
+      align-items: baseline;
+      gap: 0.5rem;
+      flex-wrap: wrap;
+    }
+
+    .naag-btn {
+      font-size: 1.6rem;
+      font-weight: 700;
+      letter-spacing: -0.3px;
+      background: none;
+      border: none;
+      cursor: pointer;
+      padding: 0.25rem 0;
+      color: #0f3b5c;
+      transition: color 0.15s;
+      text-decoration: none;
+      font-family: inherit;
+    }
+
+    .naag-btn:hover {
+      color: #1e6f9f;
+      text-decoration: underline;
+    }
+
+    .all-projects-label {
+      font-size: 1.1rem;
+      color: #4a5568;
+      font-weight: 450;
+      letter-spacing: -0.2px;
+    }
+
+    .search-box {
+      padding: 0.55rem 1rem;
+      font-size: 0.95rem;
+      border: 1px solid #cbd5e1;
+      border-radius: 48px;
+      background: white;
+      width: 240px;
+      outline: none;
+      transition: 0.2s;
+      font-family: inherit;
+    }
+
+    .search-box:focus {
+      border-color: #2c7da0;
+      box-shadow: 0 0 0 2px rgba(44,125,160,0.2);
+    }
+
+    /* table style (clean rows) */
+    .projects-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 0.5rem;
+    }
+
+    .projects-table th {
+      text-align: left;
+      padding: 1rem 0.75rem 0.9rem 0.75rem;
+      font-weight: 600;
+      font-size: 0.9rem;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: #2d3e50;
+      border-bottom: 1px solid #dce3ec;
+      background: #f8fafc;
+    }
+
+    .projects-table td {
+      padding: 1rem 0.75rem;
+      border-bottom: 1px solid #e9edf2;
+      vertical-align: middle;
+      font-size: 0.95rem;
+    }
+
+    .project-row {
+      transition: background 0.12s;
+      cursor: pointer;
+    }
+
+    .project-row:hover {
+      background: #eef3fc;
+    }
+
+    .project-name {
+      font-weight: 700;
+      font-size: 1.05rem;
+      letter-spacing: -0.2px;
+      color: #0c4a6e;
+    }
+
+    .nick-col, .time-col {
+      color: #1f2a3e;
+      word-break: break-word;
+    }
+
+    .empty-folder-msg {
+      padding: 2rem;
+      text-align: center;
+      color: #5b6e8c;
+      font-style: italic;
+      background: #ffffffd9;
+      border-radius: 24px;
+    }
+
+    .loading, .error-msg {
+      padding: 2.5rem;
+      text-align: center;
+      font-size: 1rem;
+      background: white;
+      border-radius: 24px;
+      box-shadow: 0 1px 2px rgba(0,0,0,0.03);
+    }
+
+    .error-msg {
+      color: #b91c1c;
+      background: #fff5f5;
+    }
+
+    footer {
+      margin-top: 3rem;
+      text-align: center;
+      font-size: 0.75rem;
+      color: #7c8ba0;
+      border-top: 1px solid #e2e8f0;
+      padding-top: 2rem;
+    }
+
+    @media (max-width: 700px) {
+      .container {
+        padding: 1.25rem;
+      }
+      .header-row {
+        flex-direction: column;
+        align-items: stretch;
+      }
+      .search-box {
+        width: 100%;
+      }
+      .projects-table th, .projects-table td {
+        padding: 0.85rem 0.5rem;
+      }
+      .project-name {
+        font-size: 1rem;
+      }
+    }
+  </style>
+</head>
+<body>
+<div class="container">
+  <div class="header-row">
+    <div class="nav-area">
+      <a href="https://uplgov.github.io/national-portal/naag" class="naag-btn" id="naagHomeBtn">NAAG</a>
+      <span class="all-projects-label">&lt; All Projects</span>
+    </div>
+    <input type="text" id="searchInput" class="search-box" placeholder="Search projects..." autocomplete="off">
+  </div>
+
+  <div id="projectsContainer">
+    <div class="loading">Loading projects...</div>
+  </div>
+  <footer>NAAG · project directory</footer>
+</div>
+
+<script>
+  (function() {
+    const GITHUB_API_BASE = 'https://api.github.com/repos/uplgov/national-portal/contents/national-portal/naag/projects';
+    const REPO_RAW_BASE = 'https://raw.githubusercontent.com/uplgov/national-portal/main/national-portal/naag/projects';
+    const projectsContainer = document.getElementById('projectsContainer');
+    const searchInput = document.getElementById('searchInput');
+
+    let allProjects = [];
+
+    function formatProjectTitle(folderName) {
+      const match = folderName.match(/^naag(\d+)$/i);
+      if (match) {
+        const number = match[1];
+        return `NAAG ${number}`;
+      }
+      return folderName.toUpperCase();
+    }
+
+    async function fetchTextContent(url) {
+      try {
+        const resp = await fetch(url);
+        if (!resp.ok) return null;
+        const text = await resp.text();
+        return text.trim() || '';
+      } catch (_) {
+        return null;
+      }
+    }
+
+    async function getFolderContents() {
+      try {
+        const response = await fetch(GITHUB_API_BASE);
+        if (!response.ok) {
+          throw new Error(`GitHub API error: ${response.status}`);
+        }
+        const data = await response.json();
+        if (!Array.isArray(data)) throw new Error('Invalid API response');
+        const folders = data.filter(item => item.type === 'dir' && /^naag/i.test(item.name));
+        const projectsData = [];
+        for (const folder of folders) {
+          const folderName = folder.name;
+          const nickRawUrl = `${REPO_RAW_BASE}/${folderName}/nick.txt`;
+          const timeRawUrl = `${REPO_RAW_BASE}/${folderName}/time.txt`;
+          const [nickContent, timeContent] = await Promise.all([
+            fetchTextContent(nickRawUrl),
+            fetchTextContent(timeRawUrl)
+          ]);
+          projectsData.push({
+            folderName: folderName,
+            displayTitle: formatProjectTitle(folderName),
+            nick: nickContent !== null ? nickContent : '',
+            time: timeContent !== null ? timeContent : ''
+          });
+        }
+        return projectsData;
+      } catch (err) {
+        console.error(err);
+        throw err;
+      }
+    }
+
+    function renderProjects(projectsToRender) {
+      if (!projectsContainer) return;
+      if (!projectsToRender.length) {
+        projectsContainer.innerHTML = `<div class="empty-folder-msg">✖ No matching projects found.</div>`;
+        return;
+      }
+      const tableHtml = `
+        <table class="projects-table">
+          <thead>
+            <tr><th>Project name</th><th>Nick</th><th>Time</th></tr>
+          </thead>
+          <tbody>
+            ${projectsToRender.map(proj => `
+              <tr class="project-row" data-folder="${proj.folderName}">
+                <td class="project-name">${escapeHtml(proj.displayTitle)}</td>
+                <td class="nick-col">${escapeHtml(proj.nick || '—')}</td>
+                <td class="time-col">${escapeHtml(proj.time || '—')}</td>
+              </tr>
+            `).join('')}
+          </tbody>
+        </table>
+      `;
+      projectsContainer.innerHTML = tableHtml;
+
+      const rows = document.querySelectorAll('.project-row');
+      rows.forEach(row => {
+        const folder = row.getAttribute('data-folder');
+        row.addEventListener('click', (e) => {
+          e.stopPropagation();
+          if (folder) {
+            const targetUrl = `https://uplgov.github.io/national-portal/naag/projects/${folder}/index.htm`;
+            window.location.href = targetUrl;
+          }
+        });
+      });
+    }
+
+    function escapeHtml(str) {
+      if (!str) return '';
+      return str.replace(/[&<>]/g, function(m) {
+        if (m === '&') return '&amp;';
+        if (m === '<') return '&lt;';
+        if (m === '>') return '&gt;';
+        return m;
+      }).replace(/[\uD800-\uDBFF][\uDC00-\uDFFF]/g, function(c) {
+        return c;
+      });
+    }
+
+    function filterProjects(searchTerm) {
+      if (!searchTerm.trim()) {
+        renderProjects(allProjects);
+        return;
+      }
+      const lowerTerm = searchTerm.toLowerCase();
+      const filtered = allProjects.filter(proj => {
+        return proj.displayTitle.toLowerCase().includes(lowerTerm) ||
+               (proj.nick && proj.nick.toLowerCase().includes(lowerTerm)) ||
+               (proj.time && proj.time.toLowerCase().includes(lowerTerm));
+      });
+      renderProjects(filtered);
+    }
+
+    function init() {
+      getFolderContents()
+        .then(projects => {
+          allProjects = projects;
+          if (allProjects.length === 0) {
+            projectsContainer.innerHTML = `<div class="empty-folder-msg">No naag* folders with readable nick/time. Add folders like 'naag1' containing nick.txt and time.txt</div>`;
+            return;
+          }
+          renderProjects(allProjects);
+        })
+        .catch(err => {
+          projectsContainer.innerHTML = `<div class="error-msg">⚠ Failed to load projects: ${err.message}. <br> Make sure repository 'uplgov/national-portal' is public and folder 'national-portal/naag/projects' exists.</div>`;
+        });
+
+      searchInput.addEventListener('input', (e) => {
+        filterProjects(e.target.value);
+      });
+    }
+
+    init();
+  })();
+</script>
+</body>
+</html>
