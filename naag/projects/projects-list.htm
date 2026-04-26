@@ -70,7 +70,7 @@
       line-height: 1.5;
     }
 
-    .google-translate-banner {
+    .translate-banner {
       background: var(--banner-bg);
       color: var(--banner-text);
       padding: 0.75rem 1.5rem;
@@ -84,7 +84,7 @@
       font-family: 'Georgia', 'Times New Roman', Times, serif;
     }
 
-    .google-translate-banner.show {
+    .translate-banner.show {
       display: flex;
     }
 
@@ -443,8 +443,8 @@
 </head>
 <body>
 
-<div id="googleTranslatePanel" class="google-translate-banner">
-  <div id="googleTranslateWidget"></div>
+<div id="translateBanner" class="translate-banner">
+  <div id="google_translate_element"></div>
   <div class="warning-msg">Warning: Translation tools may be inaccurate.</div>
   <button id="closeTranslateBanner" class="close-banner" aria-label="Close">X</button>
 </div>
@@ -477,6 +477,17 @@
   <footer>NAAG · project directory</footer>
 </div>
 
+<script type="text/javascript">
+  function googleTranslateElementInit() {
+    new google.translate.TranslateElement({
+      pageLanguage: 'en',
+      includedLanguages: 'en,fr,de,es,it,pt,ru,zh-CN,zh-TW,ja,ko,ar',
+      layout: google.translate.TranslateElement.InlineLayout.HORIZONTAL
+    }, 'google_translate_element');
+  }
+</script>
+<script type="text/javascript" src="//translate.google.com/translate_a/element.js?cb=googleTranslateElementInit"></script>
+
 <script>
   (function() {
     const GITHUB_API_BASE = 'https://api.github.com/repos/uplgov/national-portal/contents/naag/projects';
@@ -486,12 +497,10 @@
     const showNaagCheckbox = document.getElementById('showNaagCheckbox');
     const showNonNaagCheckbox = document.getElementById('showNonNaagCheckbox');
     const langInfoBtn = document.getElementById('langInfoBtn');
-    const translateBanner = document.getElementById('googleTranslatePanel');
+    const translateBanner = document.getElementById('translateBanner');
     const closeTranslateBanner = document.getElementById('closeTranslateBanner');
 
     let allProjects = [];
-    let googleTranslateLoaded = false;
-    let translateRefreshFlag = false;
 
     function isNaagFolder(folderName) {
       return /^naag\d*$/i.test(folderName);
@@ -590,9 +599,9 @@
       const ths = table.querySelectorAll('th');
       if (ths.length < 3) return;
       let startX, startWidth;
-      let currentTh, currentCol;
+      let currentTh;
 
-      const createResizer = (th, idx) => {
+      const createResizer = (th) => {
         const resizer = document.createElement('div');
         resizer.className = 'resize-handle';
         th.appendChild(resizer);
@@ -601,14 +610,13 @@
           e.stopPropagation();
           startX = e.clientX;
           currentTh = th;
-          currentCol = idx;
           startWidth = th.offsetWidth;
           document.body.style.cursor = 'col-resize';
           document.body.style.userSelect = 'none';
         });
       };
 
-      ths.forEach((th, idx) => createResizer(th, idx));
+      ths.forEach(th => createResizer(th));
 
       document.addEventListener('mousemove', (e) => {
         if (!currentTh) return;
@@ -616,8 +624,6 @@
         const newWidth = startWidth + diff;
         if (newWidth > 80) {
           currentTh.style.width = newWidth + 'px';
-          const tableWidth = table.offsetWidth;
-          table.style.width = tableWidth + 'px';
         }
       });
 
@@ -686,40 +692,6 @@
       };
     }
 
-    function loadGoogleTranslate() {
-      if (googleTranslateLoaded) {
-        translateBanner.classList.add('show');
-        if (!translateRefreshFlag) {
-          translateRefreshFlag = true;
-          setTimeout(() => {
-            window.location.reload();
-          }, 300);
-        }
-        return;
-      }
-      if (window.googleTranslateElementInit) return;
-      window.googleTranslateElementInit = function() {
-        new google.translate.TranslateElement({
-          pageLanguage: 'en',
-          includedLanguages: 'en,fr,de,es,it,pt,ru,zh-CN,zh-TW,ja,ko,ar',
-          layout: google.translate.TranslateElement.InlineLayout.HORIZONTAL,
-          autoDisplay: false
-        }, 'googleTranslateWidget');
-      };
-      const script = document.createElement('script');
-      script.src = '//translate.google.com/translate_a/element.js?cb=googleTranslateElementInit';
-      script.async = true;
-      document.head.appendChild(script);
-      googleTranslateLoaded = true;
-      translateBanner.classList.add('show');
-      if (!translateRefreshFlag) {
-        translateRefreshFlag = true;
-        setTimeout(() => {
-          window.location.reload();
-        }, 500);
-      }
-    }
-
     function showLanguageDialog() {
       const overlay = document.createElement('div');
       overlay.className = 'custom-dialog-overlay';
@@ -736,7 +708,7 @@
       const activateBtn = overlay.querySelector('#dialogActivateBtn');
       const closeBtn = overlay.querySelector('#dialogCloseBtn');
       activateBtn.addEventListener('click', () => {
-        loadGoogleTranslate();
+        translateBanner.classList.add('show');
         overlay.remove();
       });
       closeBtn.addEventListener('click', () => {
@@ -753,10 +725,7 @@
       translateBanner.classList.remove('show');
     });
 
-    let initialLoadDone = false;
     function init() {
-      if (initialLoadDone) return;
-      initialLoadDone = true;
       getFolderContents()
         .then(projects => {
           allProjects = projects;
