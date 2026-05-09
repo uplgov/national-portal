@@ -677,6 +677,7 @@
                         <h4>Website</h4>
                         <button class="footer-btn" id="licenceBtn">Licence</button>
                         <button class="footer-btn" id="privacyBtn">Privacy</button>
+                        <button class="footer-btn" id="tipsBtn">Tips</button>
                     </div>
                     <div class="footer-section">
                         <h4>NAAG Value</h4>
@@ -776,93 +777,128 @@
     function makeAllImagesUndraggable() { document.querySelectorAll('img').forEach(i => { i.setAttribute('draggable','false'); i.addEventListener('dragstart',e=>e.preventDefault()); }); }
     loadAll();
 
-    let marquee1Running = true, marquee2Running = true;
-    let marquee1Anim, marquee2Anim;
-    let marquee1Pos = 0, marquee2Pos = 0;
-    let marquee1Hover = false, marquee2Hover = false;
-    let marquee1Width = 0, marquee2Width = 0;
-    const SPEED = 2.2;
-    const ACCEL = 0.12;
-    const DECEL = 0.12;
-
-    function buildMarquee(containerId, marqueeId, direction, isSecond) {
-        const container = document.getElementById(containerId);
-        const marquee = document.getElementById(marqueeId);
-        if (!container || !marquee) return null;
-        marquee.innerHTML = '';
-        const triple = [...marqueeImgList, ...marqueeImgList, ...marqueeImgList];
-        triple.forEach(src => {
-            const div = document.createElement('div');
-            div.className = 'marquee-item';
-            const img = document.createElement('img');
-            img.src = src;
-            img.draggable = false;
-            img.style.maxWidth = '100%';
-            img.style.maxHeight = '70px';
-            div.appendChild(img);
-            marquee.appendChild(div);
-        });
-        
-        let currentSpeed = SPEED;
-        let hoverState = false;
-        let pos = 0;
-        let raf = null;
-        
-        function getTotalWidth() {
-            let w = 0;
-            for (let i = 0; i < marqueeImgList.length; i++) {
-                if (marquee.children[i]) w += marquee.children[i].offsetWidth + 32;
-            }
-            return w;
+    // ==================== 跑马灯 - 稳定版 ====================
+    class SmoothMarquee {
+        constructor(containerEl, marqueeEl, direction) {
+            this.container = containerEl;
+            this.marquee = marqueeEl;
+            this.direction = direction;
+            this.pos = 0;
+            this.speed = 0;
+            this.targetSpeed = 2.2;
+            this.accel = 0.12;
+            this.decel = 0.12;
+            this.hover = false;
+            this.raf = null;
+            this.singleWidth = null;
+            this.fillContent();
+            this.start();
+            this.bindEvents();
         }
         
-        function step() {
-            if (!marquee.isConnected) return;
-            if (hoverState) {
-                if (currentSpeed > 0) currentSpeed = Math.max(0, currentSpeed - DECEL);
-                else if (currentSpeed < 0) currentSpeed = Math.min(0, currentSpeed + DECEL);
-            } else {
-                if (currentSpeed < SPEED) currentSpeed = Math.min(SPEED, currentSpeed + ACCEL);
-                else if (currentSpeed > SPEED) currentSpeed = Math.max(SPEED, currentSpeed - ACCEL);
+        fillContent() {
+            this.marquee.innerHTML = '';
+            const triple = [...marqueeImgList, ...marqueeImgList, ...marqueeImgList];
+            triple.forEach(src => {
+                const div = document.createElement('div');
+                div.className = 'marquee-item';
+                const img = document.createElement('img');
+                img.src = src;
+                img.draggable = false;
+                img.style.maxWidth = '100%';
+                img.style.maxHeight = '70px';
+                div.appendChild(img);
+                this.marquee.appendChild(div);
+            });
+            this.singleWidth = null;
+        }
+        
+        getSingleWidth() {
+            if (!this.singleWidth && this.marquee.children.length > 0) {
+                let total = 0;
+                for (let i = 0; i < marqueeImgList.length && i < this.marquee.children.length; i++) {
+                    total += this.marquee.children[i].offsetWidth + 32;
+                }
+                this.singleWidth = total;
             }
-            let delta = direction === 'left' ? -currentSpeed : currentSpeed;
-            pos += delta;
-            const totalW = getTotalWidth();
-            if (totalW > 0) {
-                if (direction === 'left') {
-                    if (pos <= -totalW * 2) pos += totalW;
-                    if (pos > 0) pos = -totalW;
+            return this.singleWidth || 1;
+        }
+        
+        step() {
+            if (!this.marquee.isConnected) return;
+            
+            if (this.hover) {
+                if (this.speed > 0) this.speed = Math.max(0, this.speed - this.decel);
+                else if (this.speed < 0) this.speed = Math.min(0, this.speed + this.decel);
+            } else {
+                if (this.speed < this.targetSpeed) this.speed = Math.min(this.targetSpeed, this.speed + this.accel);
+                else if (this.speed > this.targetSpeed) this.speed = Math.max(this.targetSpeed, this.speed - this.accel);
+            }
+            
+            let delta = this.direction === 'left' ? -this.speed : this.speed;
+            this.pos += delta;
+            
+            const single = this.getSingleWidth();
+            if (single > 0) {
+                if (this.direction === 'left') {
+                    if (this.pos <= -single * 2) this.pos += single;
+                    if (this.pos > 0) this.pos = -single;
                 } else {
-                    if (pos >= totalW) pos -= totalW;
-                    if (pos < 0) pos = 0;
+                    if (this.pos >= single) this.pos -= single;
+                    if (this.pos < 0) this.pos = 0;
                 }
             }
-            marquee.style.transform = `translateX(${pos}px)`;
-            raf = requestAnimationFrame(step);
+            
+            this.marquee.style.transform = `translateX(${this.pos}px)`;
+            this.raf = requestAnimationFrame(() => this.step());
         }
         
-        function start() { if (raf) cancelAnimationFrame(raf); raf = requestAnimationFrame(step); }
-        function setHover(h) { hoverState = h; }
-        start();
-        container.addEventListener('mouseenter', () => setHover(true));
-        container.addEventListener('mouseleave', () => setHover(false));
-        return { setHover: setHover };
-    }
-
-    let leftMarqueeCtrl, rightMarqueeCtrl;
-    function initMarquees() {
-        leftMarqueeCtrl = buildMarquee('marqueeContainer1', 'marquee1', 'left', false);
-        rightMarqueeCtrl = buildMarquee('marqueeContainer2', 'marquee2', 'right', true);
-        const marqueeContainer1 = document.getElementById('marqueeContainer1');
-        const marqueeContainer2 = document.getElementById('marqueeContainer2');
-        function setBothHover(state) {
-            if (leftMarqueeCtrl) leftMarqueeCtrl.setHover(state);
-            if (rightMarqueeCtrl) rightMarqueeCtrl.setHover(state);
+        start() {
+            if (this.raf) cancelAnimationFrame(this.raf);
+            this.raf = requestAnimationFrame(() => this.step());
         }
-        marqueeContainer1.addEventListener('mouseenter', () => setBothHover(true));
-        marqueeContainer1.addEventListener('mouseleave', () => setBothHover(false));
-        marqueeContainer2.addEventListener('mouseenter', () => setBothHover(true));
-        marqueeContainer2.addEventListener('mouseleave', () => setBothHover(false));
+        
+        setHover(state) {
+            this.hover = state;
+        }
+        
+        bindEvents() {
+            this.container.addEventListener('mouseenter', () => this.setHover(true));
+            this.container.addEventListener('mouseleave', () => this.setHover(false));
+        }
+        
+        refreshWidth() {
+            this.singleWidth = null;
+        }
+    }
+    
+    let marquee1, marquee2;
+    
+    function initMarquees() {
+        const container1 = document.getElementById('marqueeContainer1');
+        const marqueeElem1 = document.getElementById('marquee1');
+        const container2 = document.getElementById('marqueeContainer2');
+        const marqueeElem2 = document.getElementById('marquee2');
+        
+        if (!container1 || !marqueeElem1 || !container2 || !marqueeElem2) return;
+        
+        marquee1 = new SmoothMarquee(container1, marqueeElem1, 'left');
+        marquee2 = new SmoothMarquee(container2, marqueeElem2, 'right');
+        
+        function setBothHover(state) {
+            if (marquee1) marquee1.setHover(state);
+            if (marquee2) marquee2.setHover(state);
+        }
+        
+        container1.addEventListener('mouseenter', () => setBothHover(true));
+        container1.addEventListener('mouseleave', () => setBothHover(false));
+        container2.addEventListener('mouseenter', () => setBothHover(true));
+        container2.addEventListener('mouseleave', () => setBothHover(false));
+        
+        window.addEventListener('resize', () => {
+            if (marquee1) marquee1.refreshWidth();
+            if (marquee2) marquee2.refreshWidth();
+        });
     }
 
     const filterTargets = document.querySelectorAll('#mainFilterTarget, #mainFilterTarget2, #enterCommonsGrid, #diveInGrid, .partners-section');
@@ -889,11 +925,13 @@
     const licenceTxt = `<p>© 2026–3019 National Administration for Agriculture & Genetic Resources (NAAG), United People's Land. All content on this website is made available under the Creative Commons Attribution-NonCommercial-NoDerivatives 4.0 International License (CC BY-NC-ND 4.0). You may copy and redistribute for non-commercial purposes only. <a href="https://creativecommons.org/licenses/by-nc-nd/4.0/legalcode" target="_blank">Full licence</a>.</p>`;
     const privacyTxt = `<p><strong>Privacy Policy</strong><br/>Last updated: Apr 2403<br/>We do not collect any personal information. No cookies. Hosted on GitHub Pages. GitHub may collect technical data. For details refer to GitHub's privacy policy.</p>`;
     const addressContent = `<p><strong>Headquarters:</strong> NAAG, 52 Anchor East Boulevard, New Lighthouse on Telos, Great Youngshine, UPL, EA YS12 NLT3</p><br/><p><strong>Sixside Branch:</strong> NAAG Sixside Branch, 1632 Walter Road, Bloésbry, Sixside, UPL, SASEA YS3 BLO21</p>`;
+    const tipsContent = `<p><strong>Tips</strong><br/>Many web pages are not publicly labeled and therefore may not be accessible through the homepage. You may need to obtain the code beforehand and access them directly.</p>`;
     
     document.getElementById('aboutNavBtn').onclick = ()=>openModal(aboutFull);
     document.getElementById('learnMoreBtn').onclick = ()=>openModal(aboutFull);
     document.getElementById('licenceBtn').onclick = ()=>openModal(licenceTxt);
     document.getElementById('privacyBtn').onclick = ()=>openModal(privacyTxt);
+    document.getElementById('tipsBtn').onclick = ()=>openModal(tipsContent);
     document.getElementById('educationBtn').onclick = ()=>window.location.href="https://uplgov.github.io/national-portal/naag/edu.htm";
     document.getElementById('environmentBtn').onclick = ()=>window.location.href="https://uplgov.github.io/national-portal/naag/environment.htm";
     document.getElementById('newsNavBtn').onclick = ()=>window.location.href="https://uplgov.github.io/national-portal/naag/icons/news.htm";
