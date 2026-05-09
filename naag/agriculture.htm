@@ -1,0 +1,751 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>NAAG - Agriculture | National Administration for Agriculture & Genetic Resources</title>
+    <link rel="icon" type="image/png" href="https://uplgov.github.io/national-portal/naag/icons/grayscale.png">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            user-drag: none;
+            -webkit-user-drag: none;
+        }
+        body {
+            background-color: #ffffff;
+            font-family: 'Arial', 'Helvetica', sans-serif;
+            color: #1a1a1a;
+            line-height: 1.4;
+            overflow-x: hidden;
+        }
+        img {
+            user-drag: none;
+            -webkit-user-drag: none;
+            draggable: false;
+        }
+        /* 预加载界面 */
+        .preloader {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: #ffffff;
+            z-index: 10000;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            transition: opacity 0.6s cubic-bezier(0.2, 0.9, 0.4, 1.1), visibility 0.6s;
+            font-family: 'Georgia', 'Times New Roman', serif;
+        }
+        .preloader.hide {
+            opacity: 0;
+            visibility: hidden;
+        }
+        .preloader-logo {
+            width: 96px;
+            height: auto;
+            margin-bottom: 1.8rem;
+            animation: gentleBreathing 1.4s ease-in-out infinite;
+        }
+        @keyframes gentleBreathing {
+            0% { transform: scale(1); opacity: 0.8; }
+            50% { transform: scale(1.03); opacity: 1; }
+            100% { transform: scale(1); opacity: 0.8; }
+        }
+        .progress-bar-container {
+            width: 280px;
+            height: 3px;
+            background-color: #e2e2e2;
+            border-radius: 3px;
+            overflow: hidden;
+            margin-top: 0.8rem;
+        }
+        .progress-fill {
+            width: 0%;
+            height: 100%;
+            background-color: #000000;
+            transition: width 0.12s linear;
+        }
+        .loading-text {
+            margin-top: 1rem;
+            font-size: 0.85rem;
+            color: #4a4a4a;
+            letter-spacing: 0.3px;
+            font-family: 'Georgia', serif;
+        }
+        .skip-btn {
+            margin-top: 1.5rem;
+            background: none;
+            border: 1px solid #ccc;
+            padding: 0.4rem 1rem;
+            font-family: 'Arial', sans-serif;
+            font-size: 0.8rem;
+            cursor: pointer;
+            display: none;
+        }
+        .skip-btn.show {
+            display: block;
+        }
+        #mainContent {
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.5s ease;
+        }
+        /* 辅助功能面板 (与主页一致) */
+        #cursor-highlight {
+            position: fixed;
+            pointer-events: none;
+            width: 50px;
+            height: 50px;
+            border: 2px solid #cc3333;
+            background: rgba(204, 51, 51, 0.3);
+            border-radius: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 10000;
+            display: none;
+        }
+        #cursor-highlight::before, #cursor-highlight::after {
+            content: '';
+            position: absolute;
+            background: #fff;
+        }
+        #cursor-highlight::before {
+            width: 18px;
+            height: 2px;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+        }
+        #cursor-highlight::after {
+            width: 2px;
+            height: 18px;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+        }
+        .acc-icon-btn {
+            background: none;
+            border: 1px solid #cccccc;
+            padding: 0.5rem 0.8rem;
+            cursor: pointer;
+            font-size: 1.1rem;
+            border-radius: 0px;
+            filter: grayscale(1);
+            transition: filter 0.2s ease;
+        }
+        .acc-icon-btn:hover {
+            filter: grayscale(0);
+        }
+        .acc-panel {
+            position: fixed;
+            top: 100px;
+            right: 20px;
+            width: 280px;
+            background: white;
+            border: 1px solid #ddd;
+            padding: 20px;
+            z-index: 2000;
+            opacity: 0;
+            visibility: hidden;
+            transform: translateX(20px);
+            transition: opacity 0.2s ease, visibility 0.2s ease, transform 0.2s ease;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+        }
+        .acc-panel.show {
+            opacity: 1;
+            visibility: visible;
+            transform: translateX(0);
+        }
+        .acc-item {
+            margin-bottom: 15px;
+        }
+        .acc-item label {
+            display: block;
+            font-size: 0.8rem;
+            color: #555;
+            margin-bottom: 5px;
+        }
+        .acc-select {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ccc;
+            font-family: inherit;
+        }
+        .container {
+            max-width: 1280px;
+            margin: 0 auto;
+            padding: 0 2rem;
+        }
+        .top-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1.25rem 0;
+            border-bottom: 1px solid #eaeaea;
+            flex-wrap: wrap;
+            gap: 1rem;
+        }
+        .left-group {
+            display: flex;
+            align-items: center;
+            gap: 1.2rem;
+        }
+        .logo-button {
+            background: none;
+            border: none;
+            padding: 0;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+        }
+        .logo-button:hover {
+            outline: 2px solid #000;
+            outline-offset: 2px;
+        }
+        .logo-img {
+            height: 48px;
+            width: auto;
+            display: block;
+        }
+        .back-link {
+            color: #1a1a1a;
+            text-decoration: none;
+            font-size: 0.9rem;
+            border: 1px solid #cccccc;
+            padding: 0.5rem 1rem;
+            transition: background 0.2s;
+        }
+        .back-link:hover {
+            background-color: #f5f5f5;
+        }
+        .right-tools {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+        .nav-links {
+            display: flex;
+            gap: 1.5rem;
+            margin: 1rem 0 1rem 0;
+        }
+        .nav-btn {
+            background: none;
+            border: none;
+            font-size: 1rem;
+            font-weight: 500;
+            cursor: pointer;
+            padding: 0.3rem 0;
+            border-bottom: 2px solid transparent;
+        }
+        .nav-btn:hover {
+            border-bottom-color: #000;
+        }
+        .pdf-section {
+            margin: 2rem 0;
+        }
+        .pdf-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 1rem;
+            margin-bottom: 1rem;
+            padding-bottom: 0.75rem;
+            border-bottom: 1px solid #eaeaea;
+        }
+        .pdf-title {
+            font-size: 1.5rem;
+            font-weight: 600;
+        }
+        .button-group {
+            display: flex;
+            gap: 0.75rem;
+        }
+        .action-btn {
+            background: #ffffff;
+            border: 1px solid #1a1a1a;
+            padding: 0.5rem 1.2rem;
+            font-family: 'Arial', sans-serif;
+            font-size: 0.85rem;
+            cursor: pointer;
+            transition: all 0.2s;
+            color: #1a1a1a;
+            text-decoration: none;
+            display: inline-block;
+        }
+        .action-btn:hover {
+            background-color: #1a1a1a;
+            color: #ffffff;
+        }
+        .pdf-viewer {
+            width: 100%;
+            height: 70vh;
+            border: 1px solid #eaeaea;
+            background: #f8f8f8;
+            margin-bottom: 1rem;
+        }
+        .pdf-viewer iframe {
+            width: 100%;
+            height: 100%;
+            border: none;
+        }
+        .social-section {
+            margin: 2rem 0 3rem;
+            padding-top: 1rem;
+            border-top: 1px solid #eaeaea;
+        }
+        .social-title {
+            font-size: 0.85rem;
+            color: #5a5a5a;
+            margin-bottom: 1rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        .social-icons {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 1rem;
+            align-items: center;
+        }
+        .social-icon {
+            width: 44px;
+            height: 44px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: transform 0.15s, opacity 0.15s;
+            background: #f5f5f5;
+            border-radius: 8px;
+            padding: 8px;
+        }
+        .social-icon:hover {
+            transform: scale(1.05);
+            opacity: 0.85;
+            background: #eaeaea;
+        }
+        .social-icon img {
+            max-width: 100%;
+            max-height: 100%;
+            object-fit: contain;
+        }
+        .footer {
+            margin-top: 3rem;
+            border-top: 1px solid #eaeaea;
+            padding: 2rem 0 2rem;
+            text-align: center;
+            font-size: 0.75rem;
+            color: #5a5a5a;
+        }
+        .footer-content {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: space-between;
+            gap: 2rem;
+            margin-bottom: 2rem;
+        }
+        .footer-section {
+            flex: 1;
+            min-width: 0;
+            text-align: left;
+        }
+        .footer-section h4 {
+            font-size: 0.8rem;
+            margin-bottom: 0.8rem;
+            color: #333;
+            font-weight: 600;
+        }
+        .footer-section button {
+            display: block;
+            background: none;
+            border: none;
+            font-size: 0.75rem;
+            color: #5a5a5a;
+            cursor: pointer;
+            padding: 0.3rem 0;
+            text-decoration: underline;
+        }
+        .footer-section button:hover {
+            color: #000;
+        }
+        .footer-copyright {
+            text-align: center;
+            font-size: 0.7rem;
+            color: #8a8a8a;
+            margin-top: 1.5rem;
+            padding-top: 1.5rem;
+            border-top: 1px solid #eaeaea;
+        }
+        .footer-logo {
+            text-align: center;
+            margin-top: 1rem;
+        }
+        .footer-logo img {
+            height: 32px;
+            width: auto;
+            opacity: 0.5;
+        }
+        @media (max-width: 780px) {
+            .container { padding: 0 1.25rem; }
+            .pdf-viewer { height: 50vh; }
+            .social-icons { gap: 0.75rem; }
+            .social-icon { width: 38px; height: 38px; }
+            .footer-content { flex-direction: column; text-align: center; }
+            .footer-section { text-align: center; }
+        }
+    </style>
+</head>
+<body>
+<div id="cursor-highlight"></div>
+
+<div class="preloader" id="preloader">
+    <img class="preloader-logo" src="https://uplgov.github.io/national-portal/naag/icons/grayscale.png" alt="NAAG" draggable="false">
+    <div class="progress-bar-container"><div class="progress-fill" id="progressFill"></div></div>
+    <div class="loading-text" id="loadingText">Loading resources ...</div>
+    <button class="skip-btn" id="skipBtn">Skip & Continue</button>
+</div>
+
+<div id="mainContent">
+    <div class="container">
+        <div class="top-bar">
+            <div class="left-group">
+                <button class="logo-button" id="logoHomeBtn">
+                    <img class="logo-img" src="https://uplgov.github.io/national-portal/naag/icons/grayscale.png" alt="NAAG" draggable="false">
+                </button>
+                <a href="https://uplgov.github.io/national-portal/naag/index.htm" class="back-link">← Back to Home</a>
+            </div>
+            <div class="right-tools">
+                <button class="acc-icon-btn" id="accIconBtn" onclick="toggleAccPanel()">♿️</button>
+            </div>
+        </div>
+
+        <div class="acc-panel" id="accPanel">
+            <div class="acc-item"><label>Contrast</label><input type="range" id="con-range" min="0.5" max="2" step="0.01" value="1" oninput="applyFilters()"></div>
+            <div class="acc-item"><label>Grayscale</label><input type="range" id="gray-range" min="0" max="1" step="0.01" value="0" oninput="applyFilters()"></div>
+            <div class="acc-item"><label>Saturate</label><input type="range" id="sat-range" min="0" max="2" step="0.01" value="1" oninput="applyFilters()"></div>
+            <div class="acc-item">
+                <label>Crosshair Color</label>
+                <select id="cursor-color-select" class="acc-select" onchange="updateCursorStyle()">
+                    <option value="rgba(204,51,51,0.3)|#cc3333">Red</option>
+                    <option value="rgba(52,152,219,0.3)|#3498db">Blue</option>
+                    <option value="rgba(50,205,50,0.3)|#32cd32">Lime</option>
+                    <option value="rgba(255,255,0,0.3)|#ffff00">Yellow</option>
+                </select>
+            </div>
+            <div class="acc-item">
+                <label style="display:flex; align-items:center; gap:10px; cursor:pointer;">
+                    <input type="checkbox" id="cursor-cb" onchange="toggleCursorAssist(this.checked)"> <span>Enable Crosshair Cursor</span>
+                </label>
+            </div>
+        </div>
+
+        <div class="nav-links">
+            <button class="nav-btn" id="aboutBtn">About</button>
+            <button class="nav-btn" id="newsBtn">News</button>
+            <button class="nav-btn" id="contactBtn">Contact</button>
+        </div>
+
+        <div class="pdf-section" id="mainFilterTarget">
+            <div class="pdf-header">
+                <span class="pdf-title">Agriculture: The Sovereign Foundation of UPL</span>
+                <div class="button-group">
+                    <button id="downloadBtn" class="action-btn">Download PDF</button>
+                    <button id="viewSourceBtn" class="action-btn">View Source File</button>
+                </div>
+            </div>
+            <div class="pdf-viewer" id="pdfViewer">
+                <iframe src="https://docs.google.com/viewer?url=https://uplgov.github.io/national-portal/naag/publications/Agriculture.pdf&embedded=true" title="Agriculture PDF"></iframe>
+            </div>
+            <p style="font-size: 0.75rem; color: #777; margin-top: 0.5rem;">If the preview does not load, <a href="#" id="fallbackLink" style="color: #1a1a1a;">click here to open the PDF directly</a>.</p>
+        </div>
+
+        <div class="social-section">
+            <div class="social-title">Share this page</div>
+            <div class="social-icons" id="socialIconsContainer"></div>
+        </div>
+    </div>
+
+    <div class="container">
+        <div class="footer">
+            <div class="footer-content">
+                <div class="footer-section">
+                    <h4>Website</h4>
+                    <button class="footer-btn" id="licenceBtn">Licence</button>
+                    <button class="footer-btn" id="privacyBtn">Privacy</button>
+                    <button class="footer-btn" id="tipsBtn">Tips</button>
+                </div>
+                <div class="footer-section">
+                    <h4>NAAG Value</h4>
+                    <button class="footer-btn" id="educationBtn">Education</button>
+                    <button class="footer-btn" id="environmentBtn">Environment</button>
+                </div>
+                <div class="footer-section">
+                    <h4>Links</h4>
+                    <button class="footer-link-btn" data-link="https://uplgov.github.io/national-portal">UPL Government</button>
+                    <button class="footer-link-btn" data-link="https://uplgov.github.io/wundertrium/index.htm">The Wundertrium Laboratory</button>
+                    <button class="footer-link-btn" data-link="https://massivedynamic.com">Massive Dynamic</button>
+                    <button class="footer-link-btn" data-link="https://umbrella.inc">Umbrella Corporation</button>
+                    <button class="footer-link-btn" data-link="https://cyberdynesystems.ai">CYBERDYNE SYSTEMS</button>
+                </div>
+            </div>
+            <div class="footer-copyright">
+                © 2026–3019 National Administration for Agriculture & Genetic Resources (NAAG)
+            </div>
+            <div class="footer-logo">
+                <img src="https://uplgov.github.io/national-portal/naag/icons/grayscale.png" alt="NAAG" draggable="false">
+            </div>
+        </div>
+    </div>
+</div>
+
+<div id="infoModal" style="display: none; position: fixed; top:0; left:0; width:100%; height:100%; background-color: rgba(0,0,0,0.55); z-index:2000; justify-content:center; align-items:center;">
+    <div style="background:#fff; max-width:600px; width:90%; max-height:80vh; overflow-y:auto; padding:2rem; position:relative;">
+        <button id="closeModalBtn" style="position:absolute; top:1rem; right:1.2rem; font-size:1.7rem; cursor:pointer; background:none; border:none;">&times;</button>
+        <div id="modalBody"></div>
+    </div>
+</div>
+
+<script>
+    // ==================== 预加载系统 ====================
+    const assetsToLoad = [
+        "https://uplgov.github.io/national-portal/naag/icons/grayscale.png",
+        "https://uplgov.github.io/national-portal/naag/publications/Agriculture.pdf"
+    ];
+    const socialIconsList = [
+        "email.png", "facebook.png", "imeessage.png", "line.png", "msnmessenger.png",
+        "signal.webp", "skype.png", "snapchat.png", "telegram.png", "wechat.png",
+        "whatsapp.webp", "yahoomessenger.png"
+    ];
+    socialIconsList.forEach(icon => {
+        assetsToLoad.push(`https://uplgov.github.io/national-portal/naag/icons/social/${icon}`);
+    });
+
+    let loadedCount = 0;
+    const totalAssets = assetsToLoad.length;
+    let loadingTimeout = null;
+    let skipTriggered = false;
+
+    const progressFill = document.getElementById('progressFill');
+    const loadingSpan = document.getElementById('loadingText');
+    const preloaderDiv = document.getElementById('preloader');
+    const mainContentDiv = document.getElementById('mainContent');
+    const skipBtn = document.getElementById('skipBtn');
+
+    function updateProgress() {
+        let percent = (loadedCount / totalAssets) * 100;
+        progressFill.style.width = percent + '%';
+        loadingSpan.innerText = `Loading ${Math.floor(percent)}% ...`;
+        if (loadedCount === totalAssets && !skipTriggered) {
+            finishPreload();
+        }
+    }
+
+    function finishPreload() {
+        if (loadingTimeout) clearTimeout(loadingTimeout);
+        preloaderDiv.classList.add('hide');
+        mainContentDiv.style.opacity = '1';
+        mainContentDiv.style.visibility = 'visible';
+        setTimeout(() => { preloaderDiv.style.display = 'none'; }, 600);
+    }
+
+    function skipPreload() {
+        if (skipTriggered) return;
+        skipTriggered = true;
+        if (loadingTimeout) clearTimeout(loadingTimeout);
+        finishPreload();
+    }
+
+    loadingTimeout = setTimeout(() => {
+        if (loadedCount < totalAssets && !skipTriggered) {
+            loadingSpan.innerText = 'There might be a connection problem.';
+            skipBtn.classList.add('show');
+            skipBtn.onclick = skipPreload;
+        }
+    }, 22000);
+
+    function loadAsset(url) {
+        return new Promise((resolve) => {
+            if (url.endsWith('.pdf')) {
+                fetch(url, { method: 'HEAD' })
+                    .then(() => resolve())
+                    .catch(() => resolve());
+            } else {
+                const img = new Image();
+                img.onload = () => resolve();
+                img.onerror = () => resolve();
+                img.src = url;
+                img.setAttribute('draggable', 'false');
+            }
+        });
+    }
+
+    async function startPreload() {
+        for (let url of assetsToLoad) {
+            await loadAsset(url);
+            loadedCount++;
+            updateProgress();
+        }
+    }
+    startPreload();
+
+    // ==================== PDF 交互 ====================
+    const pdfUrl = "https://uplgov.github.io/national-portal/naag/publications/Agriculture.pdf";
+    const currentPageUrl = "https://uplgov.github.io/national-portal/naag/agriculture.htm";
+
+    document.getElementById('downloadBtn').addEventListener('click', () => {
+        const link = document.createElement('a');
+        link.href = pdfUrl;
+        link.download = 'Agriculture_NAAG.pdf';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    });
+
+    document.getElementById('viewSourceBtn').addEventListener('click', () => {
+        window.open(pdfUrl, '_blank');
+    });
+
+    document.getElementById('fallbackLink').addEventListener('click', (e) => {
+        e.preventDefault();
+        window.open(pdfUrl, '_blank');
+    });
+
+    // ==================== 社交图标（含 iMessage） ====================
+    const baseIconPath = "https://uplgov.github.io/national-portal/naag/icons/social/";
+    const container = document.getElementById('socialIconsContainer');
+
+    const socialItems = [
+        { name: "email", file: "email.png", shareUrl: `mailto:?subject=NAAG%20Agriculture%20Report&body=${encodeURIComponent(currentPageUrl)}` },
+        { name: "facebook", file: "facebook.png", shareUrl: `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(currentPageUrl)}` },
+        { name: "imessage", file: "imeessage.png", shareUrl: `imessage:?body=${encodeURIComponent(currentPageUrl)}` },
+        { name: "line", file: "line.png", shareUrl: `https://line.me/R/msg/text/?${encodeURIComponent(currentPageUrl)}` },
+        { name: "msnmessenger", file: "msnmessenger.png", shareUrl: `msnim:chat?contact=&body=${encodeURIComponent(currentPageUrl)}` },
+        { name: "signal", file: "signal.webp", shareUrl: `https://signal.me/#?text=${encodeURIComponent(currentPageUrl)}` },
+        { name: "skype", file: "skype.png", shareUrl: `skype:?chat&text=${encodeURIComponent(currentPageUrl)}` },
+        { name: "snapchat", file: "snapchat.png", shareUrl: `https://www.snapchat.com/scan?attachmentUrl=${encodeURIComponent(currentPageUrl)}` },
+        { name: "telegram", file: "telegram.png", shareUrl: `https://t.me/share/url?url=${encodeURIComponent(currentPageUrl)}` },
+        { name: "wechat", file: "wechat.png", isWechat: true },
+        { name: "whatsapp", file: "whatsapp.webp", shareUrl: `https://wa.me/?text=${encodeURIComponent(currentPageUrl)}` },
+        { name: "yahoomessenger", file: "yahoomessenger.png", shareUrl: `ymsgr:sendim?${encodeURIComponent(currentPageUrl)}` }
+    ];
+
+    function createSocialIcon(item) {
+        const iconDiv = document.createElement('div');
+        iconDiv.className = 'social-icon';
+        const img = document.createElement('img');
+        img.src = baseIconPath + item.file;
+        img.alt = item.name;
+        img.draggable = false;
+        iconDiv.appendChild(img);
+        iconDiv.addEventListener('click', () => {
+            if (item.isWechat) {
+                window.location.href = 'weixin://';
+                setTimeout(() => {
+                    alert('Please open WeChat and manually share the link:\n' + currentPageUrl);
+                }, 500);
+            } else if (item.shareUrl) {
+                window.open(item.shareUrl, '_blank');
+            } else {
+                navigator.clipboard.writeText(currentPageUrl).then(() => {
+                    alert('Link copied to clipboard.');
+                }).catch(() => {
+                    prompt('Copy this link to share:', currentPageUrl);
+                });
+            }
+        });
+        return iconDiv;
+    }
+
+    socialItems.forEach(item => {
+        const testImg = new Image();
+        testImg.onload = () => {
+            const icon = createSocialIcon(item);
+            container.appendChild(icon);
+        };
+        testImg.onerror = () => {};
+        testImg.src = baseIconPath + item.file;
+    });
+
+    // ==================== 辅助功能 ====================
+    function toggleAccPanel() {
+        document.getElementById('accPanel').classList.toggle('show');
+    }
+    function applyFilters() {
+        const contrast = document.getElementById('con-range').value;
+        const grayscale = document.getElementById('gray-range').value;
+        const saturate = document.getElementById('sat-range').value;
+        const filterValue = `contrast(${contrast}) grayscale(${grayscale}) saturate(${saturate})`;
+        const target = document.getElementById('mainFilterTarget');
+        if (target) target.style.filter = filterValue;
+        document.querySelectorAll('.social-icon img').forEach(img => {
+            img.style.filter = filterValue;
+        });
+    }
+    let isMouseOn = false;
+    function toggleCursorAssist(on) {
+        isMouseOn = on;
+        const h = document.getElementById('cursor-highlight');
+        h.style.display = on ? 'block' : 'none';
+        document.body.style.cursor = on ? 'none' : 'default';
+        updateCursorStyle();
+    }
+    function updateCursorStyle() {
+        const [bg, border] = document.getElementById('cursor-color-select').value.split('|');
+        document.getElementById('cursor-highlight').style.background = bg;
+        document.getElementById('cursor-highlight').style.borderColor = border;
+    }
+    document.addEventListener('mousemove', e => {
+        if (!isMouseOn) return;
+        const h = document.getElementById('cursor-highlight');
+        h.style.left = e.clientX + 'px';
+        h.style.top = e.clientY + 'px';
+    });
+
+    // ==================== 模态框 ====================
+    const modal = document.getElementById('infoModal');
+    const modalBody = document.getElementById('modalBody');
+    const closeModalBtn = document.getElementById('closeModalBtn');
+
+    function openModal(contentHtml) {
+        modalBody.innerHTML = contentHtml;
+        modal.style.display = 'flex';
+        document.body.style.overflow = 'hidden';
+    }
+    function closeModal() {
+        modal.style.display = 'none';
+        document.body.style.overflow = '';
+    }
+    closeModalBtn.addEventListener('click', closeModal);
+    modal.addEventListener('click', (e) => { if (e.target === modal) closeModal(); });
+
+    const aboutContent = `<p><strong>The National Administration for Agriculture & Genetic Resources (NAAG)</strong> was established in 2026 by the UPL National Council as the central sovereign authority responsible for all agricultural planning, biological resource management, and genetic conservation across the United People's Land. Its headquarters are located in Youngshine, the capital city of UPL, and it operates as a core component of the UPL National Portal.</p><br/><p>Since its founding, NAAG has been led by its inaugural Chief Administrator, Zinwold Wundwanderer. Under his leadership, the Administration has developed comprehensive national policies governing land use, crop diversity, and the long-term preservation of biological heritage.</p><br/><p>NAAG maintains the National Germplasm Repository, a secure archive of strategically significant biological specimens. The Repository's first official entry—accession NAAG1, designated Knob—was registered shortly after the Administration's founding and remains a living symbol of UPL's commitment to safeguarding its agricultural future.</p><br/><p>Operating from its central headquarters in Youngshine, NAAG coordinates a nationwide programme of research, observation, and conservation. Its work is conducted in partnership with select external bodies, including Massive Dynamic and The Wundertrium Laboratory, to ensure that field operations and policy development meet the highest scientific and ethical standards.</p><br/><p>All NAAG activities are authorised under the Genetic Resources Protection Act and are accountable to the UPL National Council. The Administration serves every administrative region of the United People's Land, delivering its mandate through a network of enforcement, inspection, and research personnel stationed across the sovereign territory.</p>`;
+    const licenceTxt = `<p>© 2026–3019 National Administration for Agriculture & Genetic Resources (NAAG), United People's Land. All content on this website is made available under the Creative Commons Attribution-NonCommercial-NoDerivatives 4.0 International License (CC BY-NC-ND 4.0). You may copy and redistribute for non-commercial purposes only. <a href="https://creativecommons.org/licenses/by-nc-nd/4.0/legalcode" target="_blank">Full licence</a>.</p>`;
+    const privacyTxt = `<p><strong>Privacy Policy</strong><br/>Last updated: Apr 2403<br/>We do not collect any personal information. No cookies. Hosted on GitHub Pages. GitHub may collect technical data. For details refer to GitHub's privacy policy.</p>`;
+    const tipsContent = `<p><strong>Tips</strong><br/>Many web pages are not publicly labeled and therefore may not be accessible through the homepage. You may need to obtain the code beforehand and access them directly.</p>`;
+
+    document.getElementById('aboutBtn').addEventListener('click', () => openModal(aboutContent));
+    document.getElementById('newsBtn').addEventListener('click', () => window.location.href = "https://uplgov.github.io/national-portal/naag/icons/news.htm");
+    document.getElementById('contactBtn').addEventListener('click', () => window.location.href = "https://uplgov.github.io/national-portal/naag/icons/contact.htm");
+    document.getElementById('licenceBtn').addEventListener('click', () => openModal(licenceTxt));
+    document.getElementById('privacyBtn').addEventListener('click', () => openModal(privacyTxt));
+    document.getElementById('tipsBtn').addEventListener('click', () => openModal(tipsContent));
+    document.getElementById('educationBtn').addEventListener('click', () => window.location.href = "https://uplgov.github.io/national-portal/naag/edu.htm");
+    document.getElementById('environmentBtn').addEventListener('click', () => window.location.href = "https://uplgov.github.io/national-portal/naag/environment.htm");
+    document.querySelectorAll('.footer-link-btn').forEach(btn => {
+        btn.addEventListener('click', () => { window.location.href = btn.getAttribute('data-link'); });
+    });
+
+    const logoHomeBtn = document.getElementById('logoHomeBtn');
+    const indexUrl = "https://uplgov.github.io/national-portal/naag/index.htm";
+    logoHomeBtn.addEventListener('click', () => {
+        if (window.location.href !== indexUrl && !window.location.pathname.endsWith('/index.htm')) {
+            window.location.href = indexUrl;
+        }
+    });
+</script>
+</body>
+</html>
