@@ -1,1 +1,891 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>NAAG - National Administration for Agriculture & Genetic Resources</title>
+    <link rel="icon" type="image/png" href="https://uplgov.github.io/national-portal/naag/icons/grayscale.png">
+    <meta name="google" content="notranslate">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            user-drag: none;
+            -webkit-user-drag: none;
+        }
+        body {
+            background-color: #ffffff;
+            font-family: 'Arial', 'Helvetica', sans-serif;
+            color: #1a1a1a;
+            line-height: 1.4;
+            overflow-x: hidden;
+        }
+        img {
+            user-drag: none;
+            -webkit-user-drag: none;
+            draggable: false;
+            pointer-events: auto;
+        }
+        #cursor-highlight {
+            position: fixed;
+            pointer-events: none;
+            width: 50px;
+            height: 50px;
+            border: 2px solid #cc3333;
+            background: rgba(204, 51, 51, 0.3);
+            border-radius: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 10000;
+            display: none;
+        }
+        #cursor-highlight::before, #cursor-highlight::after {
+            content: '';
+            position: absolute;
+            background: #fff;
+        }
+        #cursor-highlight::before {
+            width: 18px;
+            height: 2px;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+        }
+        #cursor-highlight::after {
+            width: 2px;
+            height: 18px;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+        }
+        .preloader {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: #ffffff;
+            z-index: 10000;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            transition: opacity 0.6s cubic-bezier(0.2, 0.9, 0.4, 1.1), visibility 0.6s;
+            font-family: 'Georgia', 'Times New Roman', serif;
+        }
+        .preloader.hide {
+            opacity: 0;
+            visibility: hidden;
+        }
+        .preloader-logo {
+            width: 96px;
+            height: auto;
+            margin-bottom: 1.8rem;
+            animation: gentleBreathing 1.4s ease-in-out infinite;
+        }
+        @keyframes gentleBreathing {
+            0% { transform: scale(1); opacity: 0.8; }
+            50% { transform: scale(1.03); opacity: 1; }
+            100% { transform: scale(1); opacity: 0.8; }
+        }
+        .progress-bar-container {
+            width: 280px;
+            height: 3px;
+            background-color: #e2e2e2;
+            border-radius: 3px;
+            overflow: hidden;
+            margin-top: 0.8rem;
+        }
+        .progress-fill {
+            width: 0%;
+            height: 100%;
+            background-color: #000000;
+            transition: width 0.12s linear;
+        }
+        .loading-text {
+            margin-top: 1rem;
+            font-size: 0.85rem;
+            color: #4a4a4a;
+            letter-spacing: 0.3px;
+            font-family: 'Georgia', serif;
+        }
+        #mainContent {
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.5s ease;
+        }
+        body.modal-open {
+            overflow: hidden;
+        }
+        body.modal-open .blur-background {
+            filter: blur(4px) brightness(0.92);
+            transition: filter 0.3s ease;
+            pointer-events: none;
+        }
+        .modal {
+            display: flex;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.55);
+            z-index: 2000;
+            justify-content: center;
+            align-items: center;
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.25s ease, visibility 0s 0.25s;
+        }
+        body.modal-open .modal {
+            opacity: 1;
+            visibility: visible;
+            transition: opacity 0.25s ease, visibility 0s 0s;
+        }
+        .modal-content {
+            background: #fff;
+            max-width: 700px;
+            width: 90%;
+            max-height: 80vh;
+            overflow-y: auto;
+            padding: 2rem;
+            position: relative;
+            font-family: 'Arial', sans-serif;
+            box-shadow: 0 25px 40px rgba(0,0,0,0.25);
+            transform: scale(0.96);
+            opacity: 0;
+            transition: transform 0.22s cubic-bezier(0.2, 0.9, 0.5, 1.2), opacity 0.2s;
+        }
+        body.modal-open .modal-content {
+            transform: scale(1);
+            opacity: 1;
+        }
+        .close-modal {
+            position: absolute;
+            top: 1rem;
+            right: 1.2rem;
+            font-size: 1.7rem;
+            cursor: pointer;
+            background: none;
+            border: none;
+        }
+        .container {
+            max-width: 1280px;
+            margin: 0 auto;
+            padding: 0 2rem;
+        }
+        .top-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1.25rem 0;
+            border-bottom: 1px solid #eaeaea;
+            flex-wrap: wrap;
+            gap: 1rem;
+        }
+        .left-group {
+            display: flex;
+            align-items: center;
+            gap: 1.2rem;
+        }
+        .logo-button {
+            background: none;
+            border: none;
+            padding: 0;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+        }
+        .logo-button:hover {
+            outline: 2px solid #000;
+            outline-offset: 2px;
+        }
+        .logo-img {
+            height: 48px;
+            width: auto;
+            display: block;
+        }
+        .menu-btn {
+            background: #ffffff;
+            border: 1px solid #cccccc;
+            padding: 0.5rem 1rem;
+            font-family: 'Arial', sans-serif;
+            font-size: 0.9rem;
+            cursor: pointer;
+            transition: background 0.2s;
+            border-radius: 0px;
+        }
+        .menu-btn:hover {
+            background-color: #f5f5f5;
+            border-color: #888;
+        }
+        .lang-switch {
+            position: relative;
+        }
+        .lang-btn {
+            background: #ffffff;
+            border: 1px solid #cccccc;
+            padding: 0.5rem 1rem;
+            font-family: 'Arial', sans-serif;
+            font-size: 0.9rem;
+            cursor: pointer;
+            border-radius: 0px;
+        }
+        .lang-btn:hover {
+            background-color: #f5f5f5;
+        }
+        .lang-dropdown {
+            position: absolute;
+            top: 120%;
+            right: 0;
+            background: white;
+            border: 1px solid #ddd;
+            width: 180px;
+            z-index: 150;
+            opacity: 0;
+            visibility: hidden;
+            transform: translateY(-10px);
+            transition: opacity 0.2s ease, visibility 0.2s ease, transform 0.2s ease;
+            box-shadow: 0 6px 12px rgba(0,0,0,0.08);
+        }
+        .lang-dropdown.show {
+            opacity: 1;
+            visibility: visible;
+            transform: translateY(0);
+        }
+        .lang-option {
+            padding: 0.6rem 1rem;
+            font-size: 0.85rem;
+            cursor: pointer;
+            border-bottom: 1px solid #f0f0f0;
+            transition: background 0.1s;
+        }
+        .lang-option:last-child {
+            border-bottom: none;
+        }
+        .lang-option:hover {
+            background-color: #f5f5f5;
+        }
+        .menu-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.4);
+            z-index: 300;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            visibility: hidden;
+            opacity: 0;
+            transition: visibility 0.2s, opacity 0.2s;
+        }
+        .menu-overlay.open {
+            visibility: visible;
+            opacity: 1;
+        }
+        .menu-panel {
+            background: white;
+            width: 340px;
+            max-width: 90vw;
+            max-height: 85vh;
+            overflow-y: auto;
+            border: 1px solid #e0e0e0;
+            box-shadow: 0 20px 35px rgba(0,0,0,0.2);
+            padding: 1.2rem 0;
+            transform: scale(0.96);
+            transition: transform 0.2s ease;
+        }
+        .menu-overlay.open .menu-panel {
+            transform: scale(1);
+        }
+        .menu-section {
+            padding: 0.5rem 0;
+            border-bottom: 1px solid #ececec;
+        }
+        .menu-section:last-child {
+            border-bottom: none;
+        }
+        .menu-section-title {
+            font-size: 0.7rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: #6c6c6c;
+            padding: 0.5rem 1.2rem;
+        }
+        .menu-item {
+            padding: 0.6rem 1.2rem;
+            font-size: 0.9rem;
+            cursor: pointer;
+            transition: background 0.1s;
+        }
+        .menu-item:hover {
+            background-color: #f5f5f5;
+        }
+        .nav-links {
+            display: flex;
+            gap: 1.5rem;
+            margin: 1rem 0 1rem 0;
+        }
+        .nav-btn {
+            background: none;
+            border: none;
+            font-size: 1rem;
+            font-weight: 500;
+            cursor: pointer;
+            padding: 0.3rem 0;
+            border-bottom: 2px solid transparent;
+        }
+        .nav-btn:hover {
+            border-bottom-color: #000;
+        }
+        .hero-grid {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 3rem;
+            margin: 3rem 0 2.5rem;
+            align-items: center;
+        }
+        .hero-left {
+            flex: 1.2;
+            min-width: 240px;
+        }
+        .hero-title {
+            font-size: 2.8rem;
+            font-weight: 700;
+            line-height: 1.2;
+            color: #000;
+        }
+        .hero-right {
+            flex: 1;
+            text-align: center;
+        }
+        .hero-image {
+            max-width: 100%;
+            height: auto;
+        }
+        .mission-section {
+            margin: 2rem 0 3rem;
+            border-top: 1px solid #f0f0f0;
+            padding-top: 2rem;
+        }
+        .mission-text {
+            font-family: 'Georgia', 'Times New Roman', serif;
+            font-style: italic;
+            font-size: 1.25rem;
+            line-height: 1.5;
+            color: #2c2c2c;
+            max-width: 80%;
+            margin-bottom: 1.5rem;
+        }
+        .learn-btn {
+            background: none;
+            border: 1px solid #000;
+            padding: 0.6rem 1.5rem;
+            font-family: 'Arial', sans-serif;
+            font-size: 0.9rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+            color: #000;
+            border-radius: 0px;
+        }
+        .learn-btn:hover {
+            background-color: #000;
+            color: #fff;
+        }
+        .section-title {
+            font-size: 1.8rem;
+            font-weight: 600;
+            margin: 2.5rem 0 1.2rem;
+            color: #1a1a1a;
+        }
+        .button-grid {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+        .action-card {
+            flex: 1 1 220px;
+            background: #fafafa;
+            border: 1px solid #eaeaea;
+            padding: 1.5rem 1rem;
+            text-align: center;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        .action-card:hover {
+            background: #f0f0f0;
+        }
+        .action-main {
+            font-size: 1.4rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+        }
+        .action-sub {
+            font-family: 'Georgia', serif;
+            font-style: italic;
+            font-size: 0.9rem;
+            color: #4a4a4a;
+        }
+        .partners-section {
+            margin: 3rem 0 2rem;
+        }
+        .partners-title {
+            font-size: 1.2rem;
+            font-weight: 500;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 1.8rem;
+            text-align: center;
+            color: #2d2d2d;
+        }
+        .marquee-container {
+            width: 100%;
+            overflow-x: hidden;
+            margin-bottom: 1.2rem;
+        }
+        .marquee {
+            display: flex;
+            width: max-content;
+            will-change: transform;
+        }
+        .marquee-item {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 140px;
+            height: 80px;
+            margin: 0 1rem;
+            background: #fff;
+        }
+        .marquee-item img {
+            max-width: 100%;
+            max-height: 70px;
+            object-fit: contain;
+            filter: grayscale(20%);
+        }
+        .footer {
+            margin-top: 3rem;
+            border-top: 1px solid #eaeaea;
+            padding: 2rem 0 2.5rem;
+            text-align: center;
+            font-size: 0.75rem;
+            color: #5a5a5a;
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+        .footer-buttons {
+            display: flex;
+            gap: 2rem;
+            justify-content: center;
+        }
+        .footer-btn {
+            background: none;
+            border: none;
+            font-size: 0.85rem;
+            text-decoration: underline;
+            cursor: pointer;
+        }
+        .acc-icon-btn {
+            background: none;
+            border: 1px solid #cccccc;
+            padding: 0.5rem 0.8rem;
+            cursor: pointer;
+            font-size: 1.1rem;
+            border-radius: 0px;
+            filter: grayscale(1);
+            transition: filter 0.2s ease;
+        }
+        .acc-icon-btn:hover {
+            filter: grayscale(0);
+        }
+        .acc-panel {
+            position: fixed;
+            top: 100px;
+            right: 20px;
+            width: 280px;
+            background: white;
+            border: 1px solid #ddd;
+            padding: 20px;
+            z-index: 2000;
+            opacity: 0;
+            visibility: hidden;
+            transform: translateX(20px);
+            transition: opacity 0.2s ease, visibility 0.2s ease, transform 0.2s ease;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+        }
+        .acc-panel.show {
+            opacity: 1;
+            visibility: visible;
+            transform: translateX(0);
+        }
+        .acc-item {
+            margin-bottom: 15px;
+        }
+        .acc-item label {
+            display: block;
+            font-size: 0.8rem;
+            color: #555;
+            margin-bottom: 5px;
+        }
+        .acc-select {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ccc;
+            font-family: inherit;
+        }
+        .tool-btn {
+            background: #ffffff;
+            border: 1px solid #cccccc;
+            padding: 0.5rem 1rem;
+            font-family: 'Arial', sans-serif;
+            font-size: 0.9rem;
+            cursor: pointer;
+            border-radius: 0px;
+        }
+        .tool-btn:hover {
+            background-color: #f5f5f5;
+        }
+        .nav-tools {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+        @media (max-width: 780px) {
+            .hero-title { font-size: 2rem; }
+            .mission-text { max-width: 100%; }
+            .container { padding: 0 1.25rem; }
+        }
+    </style>
+</head>
+<body>
+<div id="cursor-highlight"></div>
 
+<div class="preloader" id="preloader">
+    <img class="preloader-logo" src="https://uplgov.github.io/national-portal/naag/icons/grayscale.png" alt="NAAG" draggable="false">
+    <div class="progress-bar-container"><div class="progress-fill" id="progressFill"></div></div>
+    <div class="loading-text" id="loadingText">Loading resources ...</div>
+</div>
+
+<div id="mainContent">
+    <div class="blur-background">
+        <div class="container">
+            <div class="top-bar">
+                <div class="left-group">
+                    <button class="logo-button" id="logoHomeBtn"><img class="logo-img" src="https://uplgov.github.io/national-portal/naag/icons/grayscale.png" alt="NAAG" draggable="false"></button>
+                    <button class="menu-btn" id="menuBtn">Menu</button>
+                </div>
+                <div class="nav-tools">
+                    <button class="acc-icon-btn" id="accIconBtn" onclick="toggleAccPanel()">♿️</button>
+                    <button class="tool-btn" id="langBtn">LANGUAGE ▾</button>
+                </div>
+                <div class="lang-switch">
+                    <div class="lang-dropdown" id="langDropdown">
+                        <div class="lang-option" data-lang="en">British English</div>
+                        <div class="lang-option" data-lang="zh-classical">華夏文言</div>
+                        <div class="lang-option" data-lang="google">Google Translate</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="acc-panel" id="accPanel">
+                <div class="acc-item"><label>Contrast</label><input type="range" id="con-range" min="0.5" max="2" step="0.01" value="1" oninput="applyFilters()"></div>
+                <div class="acc-item"><label>Grayscale</label><input type="range" id="gray-range" min="0" max="1" step="0.01" value="0" oninput="applyFilters()"></div>
+                <div class="acc-item"><label>Saturate</label><input type="range" id="sat-range" min="0" max="2" step="0.01" value="1" oninput="applyFilters()"></div>
+                <div class="acc-item">
+                    <label>Crosshair Color</label>
+                    <select id="cursor-color-select" class="acc-select" onchange="updateCursorStyle()">
+                        <option value="rgba(204,51,51,0.3)|#cc3333">Red</option>
+                        <option value="rgba(52,152,219,0.3)|#3498db">Blue</option>
+                        <option value="rgba(50,205,50,0.3)|#32cd32">Lime</option>
+                        <option value="rgba(255,255,0,0.3)|#ffff00">Yellow</option>
+                    </select>
+                </div>
+                <div class="acc-item">
+                    <label style="display:flex; align-items:center; gap:10px; cursor:pointer;">
+                        <input type="checkbox" id="cursor-cb" onchange="toggleCursorAssist(this.checked)"> <span>Enable Crosshair Cursor</span>
+                    </label>
+                </div>
+            </div>
+
+            <div class="nav-links">
+                <button class="nav-btn" id="aboutNavBtn">About</button>
+                <button class="nav-btn" id="newsNavBtn">News</button>
+                <button class="nav-btn" id="contactNavBtn">Contact</button>
+            </div>
+
+            <div class="hero-grid" id="mainFilterTarget">
+                <div class="hero-left"><div class="hero-title" id="mainTitleText">UPL National Administration for Agriculture & Genetic Resources</div></div>
+                <div class="hero-right"><img class="hero-image" src="https://uplgov.github.io/national-portal/naag/icons/NAAGnotext.png" alt="NAAG visual" draggable="false"></div>
+            </div>
+            <div class="mission-section" id="mainFilterTarget2">
+                <div class="mission-text" id="missionQuote">"Dedicated to the preservation and advancement of agricultural and genetic resources under the sovereign authority of UPL. Founded 2026. Led by Zinwold Wundwanderer."</div>
+                <button class="learn-btn" id="learnMoreBtn">Learn more…</button>
+            </div>
+
+            <div class="section-title" id="enterCommonsTitle">Enter the commons</div>
+            <div class="button-grid" id="enterCommonsGrid">
+                <div class="action-card" data-link="https://uplgov.github.io/national-portal/naag/agriculture.htm"><div class="action-main">Agriculture</div><div class="action-sub">What we grow.</div></div>
+                <div class="action-card" data-link="https://uplgov.github.io/national-portal/naag/genetics.htm"><div class="action-main">Genetics</div><div class="action-sub">What we preserve.</div></div>
+                <div class="action-card" data-link="https://uplgov.github.io/national-portal/naag/legacy.htm"><div class="action-main">Legacy</div><div class="action-sub">What we carry.</div></div>
+            </div>
+
+            <div class="section-title" id="diveInTitle">Dive in</div>
+            <div class="button-grid" id="diveInGrid">
+                <div class="action-card" data-link="https://uplgov.github.io/national-portal/naag/projects/projects-list.htm"><div class="action-main">Latest Project</div><div class="action-sub">See what we're working on.</div></div>
+                <div class="action-card" data-link="https://uplgov.github.io/national-portal/naag/projects/leadership.htm"><div class="action-main">Our Leadership</div><div class="action-sub">Meet those who guide us.</div></div>
+                <div class="action-card" data-link="https://uplgov.github.io/national-portal/naag/icons/news.htm"><div class="action-main">News</div><div class="action-sub">Keep Updated</div></div>
+            </div>
+
+            <div class="partners-section">
+                <div class="partners-title">Accredited Research Collaborators and Official Collaborating Institutions</div>
+                <div class="marquee-container" id="marqueeContainer1"><div class="marquee" id="marquee1"></div></div>
+                <div class="marquee-container" id="marqueeContainer2"><div class="marquee" id="marquee2"></div></div>
+            </div>
+        </div>
+        <div class="container">
+            <div class="footer">
+                <div class="footer-buttons">
+                    <button class="footer-btn" id="licenceBtn">Licence</button>
+                    <button class="footer-btn" id="privacyBtn">Privacy</button>
+                </div>
+                <div>© 2026–3019 National Administration for Agriculture & Genetic Resources (NAAG)</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="menu-overlay" id="menuOverlay">
+    <div class="menu-panel">
+        <div class="menu-section">
+            <div class="menu-section-title">Information</div>
+            <div class="menu-item" data-action="aboutModal">About</div>
+            <div class="menu-item" data-link="https://uplgov.github.io/national-portal/naag/agriculture.htm">Agriculture</div>
+            <div class="menu-item" data-link="https://uplgov.github.io/national-portal/naag/genetics.htm">Genetics</div>
+            <div class="menu-item" data-link="https://uplgov.github.io/national-portal/naag/legacy.htm">Legacy</div>
+            <div class="menu-item" data-link="https://uplgov.github.io/national-portal/naag/projects/leadership.htm">Leadership</div>
+            <div class="menu-item" data-link="https://uplgov.github.io/national-portal/naag/icons/news.htm">News</div>
+        </div>
+        <div class="menu-section">
+            <div class="menu-section-title">Services</div>
+            <div class="menu-item" data-link="https://uplgov.github.io/national-portal/naag/projects/projects-list.htm">Projects</div>
+            <div class="menu-item" data-link="https://uplgov.github.io/national-portal/naag/icons/contact.htm">Contact</div>
+            <div class="menu-item" id="addressMenuItem">Address</div>
+        </div>
+        <div class="menu-section">
+            <div class="menu-section-title">Links</div>
+            <div class="menu-item" data-link="https://uplgov.github.io/national-portal">UPL Government</div>
+            <div class="menu-item" data-link="https://uplgov.github.io/wundertrium/index.htm">The Wundertrium Laboratory</div>
+            <div class="menu-item" data-link="https://massivedynamic.com">Massive Dynamic</div>
+            <div class="menu-item" data-link="https://umbrella.inc">Umbrella Corporation</div>
+            <div class="menu-item" data-link="https://cyberdynesystems.ai">CYBERDYNE SYSTEMS</div>
+        </div>
+    </div>
+</div>
+
+<div id="infoModal" class="modal"><div class="modal-content"><button class="close-modal" id="closeModalBtn">&times;</button><div id="modalBody"></div></div></div>
+<div id="google_translate_element" style="position: absolute; top: -9999px; left: -9999px;"></div>
+
+<script>
+    const allImageUrls = new Set();
+    allImageUrls.add("https://uplgov.github.io/national-portal/naag/icons/grayscale.png");
+    allImageUrls.add("https://uplgov.github.io/national-portal/naag/icons/NAAGnotext.png");
+    const marqueeImgList = [
+        "https://uplgov.github.io/national-portal/naag/icons/UmbrellaCorporation.jpg","https://uplgov.github.io/national-portal/naag/icons/aperture.jpg",
+        "https://uplgov.github.io/national-portal/naag/icons/cyberdyne.jpg","https://uplgov.github.io/national-portal/naag/icons/massivedynamic.jpg",
+        "https://uplgov.github.io/national-portal/naag/icons/thewundertriumlab.png","https://uplgov.github.io/national-portal/naag/icons/weylandyutani.png",
+        "https://uplgov.github.io/national-portal/naag/icons/Abstergo-FH.webp","https://uplgov.github.io/national-portal/naag/icons/R.99f32b068dca04c7c6d11962c3b070d3.png",
+        "https://uplgov.github.io/national-portal/naag/icons/cerberus-head-logo-mascot-template-free-vector.jpg","https://uplgov.github.io/national-portal/naag/icons/christian-milik-bw-small-print.jpg",
+        "https://uplgov.github.io/national-portal/naag/icons/st,small,507x507-pad,600x600,f8f8f8.jpg","https://uplgov.github.io/national-portal/naag/icons/th.webp"
+    ];
+    marqueeImgList.forEach(u => allImageUrls.add(u));
+    const imgArray = Array.from(allImageUrls);
+    let loaded = 0;
+    const progressFill = document.getElementById('progressFill');
+    const loadingSpan = document.getElementById('loadingText');
+    const preloaderDiv = document.getElementById('preloader');
+    const mainContent = document.getElementById('mainContent');
+
+    function updateProgress() { let p = (loaded/imgArray.length)*100; progressFill.style.width = p+'%'; loadingSpan.innerText = `Loading ${Math.floor(p)}%`; if(loaded === imgArray.length) finishPreload(); }
+    function finishPreload() {
+        loadingSpan.innerText = 'Ready';
+        setTimeout(() => {
+            preloaderDiv.classList.add('hide');
+            mainContent.style.opacity = '1';
+            mainContent.style.visibility = 'visible';
+            setTimeout(() => { preloaderDiv.style.display = 'none'; }, 700);
+            initMarquees();
+            makeAllImagesUndraggable();
+        }, 200);
+    }
+    async function loadAll() {
+        for(let url of imgArray) {
+            await new Promise(resolve => { let img = new Image(); img.onload=resolve; img.onerror=resolve; img.src=url; img.setAttribute('draggable','false'); });
+            loaded++; updateProgress();
+        }
+    }
+    function makeAllImagesUndraggable() { document.querySelectorAll('img').forEach(i => { i.setAttribute('draggable','false'); i.addEventListener('dragstart',e=>e.preventDefault()); }); }
+    loadAll();
+
+    class SmoothMarquee {
+        constructor(containerEl, marqueeEl, dir) {
+            this.container = containerEl; this.marquee = marqueeEl; this.dir = dir; this.pos = 0; this.speed = 0; this.targetSpeed = 2.2; this.accel=0.12; this.decel=0.12; this.hover=false; this.raf=null;
+            this.fill();
+        }
+        fill() {
+            this.marquee.innerHTML = '';
+            [...marqueeImgList,...marqueeImgList,...marqueeImgList].forEach(src => {
+                let d = document.createElement('div'); d.className='marquee-item';
+                let i = new Image(); i.src=src; i.draggable=false; i.style.maxWidth='100%'; i.style.maxHeight='70px';
+                d.appendChild(i); this.marquee.appendChild(d);
+            });
+            this.singleWidth=null;
+        }
+        getSingle() { if(!this.singleWidth){ let w=0; for(let i=0;i<marqueeImgList.length;i++) w+=this.marquee.children[i].offsetWidth+32; this.singleWidth=w; } return this.singleWidth; }
+        step() {
+            if(!this.marquee.isConnected) return;
+            if(this.hover) this.speed = Math.abs(this.speed)<0.02?0: (this.speed>0? Math.max(0, this.speed-this.decel): Math.min(0, this.speed+this.decel));
+            else this.speed = this.speed < this.targetSpeed ? Math.min(this.targetSpeed, this.speed+this.accel) : Math.max(this.targetSpeed, this.speed-this.accel);
+            let delta = this.dir==='left' ? -this.speed : this.speed;
+            this.pos += delta; let sw = this.getSingle();
+            if(this.dir==='left'){ if(this.pos <= -sw*2) this.pos += sw; if(this.pos>0) this.pos = -sw; }
+            else { if(this.pos >= sw) this.pos -= sw; if(this.pos<0) this.pos = 0; }
+            this.marquee.style.transform = `translateX(${this.pos}px)`;
+            this.raf = requestAnimationFrame(()=>this.step());
+        }
+        start(){ this.raf = requestAnimationFrame(()=>this.step()); }
+        setHover(h){ this.hover = h; }
+    }
+    let leftMarq, rightMarq;
+    function initMarquees() {
+        let c1=document.getElementById('marqueeContainer1'), m1=document.getElementById('marquee1');
+        let c2=document.getElementById('marqueeContainer2'), m2=document.getElementById('marquee2');
+        if(!c1 || !m1) return;
+        leftMarq = new SmoothMarquee(c1,m1,'left'); rightMarq = new SmoothMarquee(c2,m2,'right');
+        leftMarq.start(); rightMarq.start();
+        const setBoth = (state)=>{ leftMarq?.setHover(state); rightMarq?.setHover(state); };
+        c1.addEventListener('mouseenter',()=>setBoth(true)); c1.addEventListener('mouseleave',()=>setBoth(false));
+        c2.addEventListener('mouseenter',()=>setBoth(true)); c2.addEventListener('mouseleave',()=>setBoth(false));
+    }
+
+    const filterTargets = document.querySelectorAll('#mainFilterTarget, #mainFilterTarget2, #enterCommonsGrid, #diveInGrid, .partners-section, .footer');
+    function applyFilters() {
+        const contrast = document.getElementById('con-range').value;
+        const grayscale = document.getElementById('gray-range').value;
+        const saturate = document.getElementById('sat-range').value;
+        const filterValue = `contrast(${contrast}) grayscale(${grayscale}) saturate(${saturate})`;
+        filterTargets.forEach(el => { el.style.filter = filterValue; });
+        document.querySelector('.hero-right img').style.filter = filterValue;
+        document.querySelectorAll('.marquee-item img').forEach(img => { img.style.filter = `grayscale(20%) ${filterValue}`; });
+    }
+
+    const modal = document.getElementById('infoModal');
+    const modalBodyDiv = document.getElementById('modalBody');
+    const blurContainer = document.querySelector('.blur-background');
+    function openModal(html) { modalBodyDiv.innerHTML = html; modal.style.display='flex'; document.body.classList.add('modal-open'); blurContainer.style.filter='blur(4px) brightness(0.92)'; }
+    function closeModal() { document.body.classList.remove('modal-open'); blurContainer.style.filter='none'; modal.style.display='none'; }
+    document.getElementById('closeModalBtn').addEventListener('click', closeModal);
+    modal.addEventListener('click',(e)=>{ if(e.target===modal) closeModal(); });
+
+    const aboutFull = `<p><strong>The National Administration for Agriculture & Genetic Resources (NAAG)</strong> was established in 2026 by the UPL National Council as the central sovereign authority responsible for all agricultural planning, biological resource management, and genetic conservation across the United People's Land. Its headquarters are located in Youngshine, the capital city of UPL, and it operates as a core component of the UPL National Portal.</p><br/><p>Since its founding, NAAG has been led by its inaugural Chief Administrator, Zinwold Wundwanderer. Under his leadership, the Administration has developed comprehensive national policies governing land use, crop diversity, and the long-term preservation of biological heritage.</p><br/><p>NAAG maintains the National Germplasm Repository, a secure archive of strategically significant biological specimens. The Repository's first official entry—accession NAAG1, designated Knob—was registered shortly after the Administration's founding and remains a living symbol of UPL's commitment to safeguarding its agricultural future.</p><br/><p>Operating from its central headquarters in Youngshine, NAAG coordinates a nationwide programme of research, observation, and conservation. Its work is conducted in partnership with select external bodies, including Massive Dynamic and The Wundertrium Laboratory, to ensure that field operations and policy development meet the highest scientific and ethical standards.</p><br/><p>All NAAG activities are authorised under the Genetic Resources Protection Act and are accountable to the UPL National Council. The Administration serves every administrative region of the United People's Land, delivering its mandate through a network of enforcement, inspection, and research personnel stationed across the sovereign territory.</p>`;
+    const licenceTxt = `<p>© 2026–3019 National Administration for Agriculture & Genetic Resources (NAAG), United People's Land. All content on this website is made available under the Creative Commons Attribution-NonCommercial-NoDerivatives 4.0 International License (CC BY-NC-ND 4.0). You may copy and redistribute for non-commercial purposes only. <a href="https://creativecommons.org/licenses/by-nc-nd/4.0/legalcode" target="_blank">Full licence</a>.</p>`;
+    const privacyTxt = `<p><strong>Privacy Policy</strong><br/>Last updated: Apr 2403<br/>We do not collect any personal information. No cookies. Hosted on GitHub Pages. GitHub may collect technical data. For details refer to GitHub's privacy policy.</p>`;
+    const addressContent = `<p><strong>Headquarters:</strong> NAAG, 52 Anchor East Boulevard, New Lighthouse on Telos, Great Youngshine, UPL, EA YS12 NLT3</p><br/><p><strong>Sixside Branch:</strong> NAAG Sixside Branch, 1632 Walter Road, Bloésbry, Sixside, UPL, SASEA YS3 BLO21</p>`;
+    
+    document.getElementById('aboutNavBtn').onclick = ()=>openModal(aboutFull);
+    document.getElementById('learnMoreBtn').onclick = ()=>openModal(aboutFull);
+    document.getElementById('licenceBtn').onclick = ()=>openModal(licenceTxt);
+    document.getElementById('privacyBtn').onclick = ()=>openModal(privacyTxt);
+    document.getElementById('newsNavBtn').onclick = ()=>window.location.href="https://uplgov.github.io/national-portal/naag/icons/news.htm";
+    document.getElementById('contactNavBtn').onclick = ()=>window.location.href="https://uplgov.github.io/national-portal/naag/icons/contact.htm";
+    document.querySelectorAll('.action-card').forEach(c=>c.addEventListener('click',()=>window.location.href=c.getAttribute('data-link')));
+
+    const menuOverlay = document.getElementById('menuOverlay');
+    const menuBtn = document.getElementById('menuBtn');
+    function openMenu() { menuOverlay.classList.add('open'); }
+    function closeMenu() { menuOverlay.classList.remove('open'); }
+    menuBtn.addEventListener('click', (e)=>{ e.stopPropagation(); openMenu(); });
+    menuOverlay.addEventListener('click', (e)=>{ if(e.target === menuOverlay) closeMenu(); });
+    document.querySelectorAll('#menuOverlay .menu-item').forEach(item => {
+        item.addEventListener('click', (e) => {
+            const link = item.getAttribute('data-link');
+            const action = item.getAttribute('data-action');
+            if(link) { window.location.href = link; closeMenu(); }
+            else if(action === 'aboutModal') { openModal(aboutFull); closeMenu(); }
+            else if(item.id === 'addressMenuItem') { openModal(addressContent); closeMenu(); }
+        });
+    });
+
+    const indexUrl = "https://uplgov.github.io/national-portal/naag/index.htm";
+    document.getElementById('logoHomeBtn').addEventListener('click',()=>{ if(window.location.href !== indexUrl && !window.location.pathname.endsWith('/index.htm')) window.location.href=indexUrl; });
+
+    function applyClassical() {
+        document.getElementById('mainTitleText').innerText = "司農殖種署";
+        document.getElementById('missionQuote').innerHTML = "「承UPL之天命，守農桑基因之永續。肇建於二零二六年，司牧者津沃德·溫德萬德勒。」";
+        document.getElementById('enterCommonsTitle').innerText = "入公廨";
+        document.getElementById('diveInTitle').innerText = "探幽";
+        let cards = document.querySelectorAll('#enterCommonsGrid .action-card');
+        if(cards[0]){ cards[0].querySelector('.action-main').innerText="農事"; cards[0].querySelector('.action-sub').innerText="吾人所植"; }
+        if(cards[1]){ cards[1].querySelector('.action-main').innerText="種質"; cards[1].querySelector('.action-sub').innerText="吾人所藏"; }
+        if(cards[2]){ cards[2].querySelector('.action-main').innerText="遺產"; cards[2].querySelector('.action-sub').innerText="吾人所承"; }
+        let dive = document.querySelectorAll('#diveInGrid .action-card');
+        if(dive[0]){ dive[0].querySelector('.action-main').innerText="近工"; dive[0].querySelector('.action-sub').innerText="觀吾人所創"; }
+        if(dive[1]){ dive[1].querySelector('.action-main').innerText="司牧"; dive[1].querySelector('.action-sub').innerText="會當凌絕頂"; }
+        if(dive[2]){ dive[2].querySelector('.action-main').innerText="時報"; dive[2].querySelector('.action-sub').innerText="常新常看"; }
+        document.querySelector('.learn-btn').innerText = "閲之…";
+        let navs = document.querySelectorAll('.nav-btn');
+        if(navs[0]) navs[0].innerText="本署"; if(navs[1]) navs[1].innerText="新聞"; if(navs[2]) navs[2].innerText="會晤";
+        document.querySelector('.partners-title').innerText = "同修諸署及官定合契之所";
+    }
+    function resetEnglish(){ location.reload(); }
+    let googleLoaded=false;
+    function loadGoogleTranslate(){
+        if(googleLoaded){ 
+            let el = document.getElementById('google_translate_element');
+            el.style.cssText = 'position:fixed; bottom:20px; right:20px; width:260px; background:#fff; border:1px solid #ccc; z-index:10000; padding:8px; display:block;';
+            return; 
+        }
+        let script=document.createElement('script'); script.src='//translate.google.com/translate_a/element.js?cb=initGoogleTrans'; document.head.appendChild(script);
+        window.initGoogleTrans = function(){ new google.translate.TranslateElement({pageLanguage:'en'},'google_translate_element'); let el=document.getElementById('google_translate_element'); el.style.cssText='position:fixed; bottom:20px; right:20px; width:260px; background:#fff; border:1px solid #ccc; z-index:10000; padding:8px; display:block;'; };
+        googleLoaded=true;
+    }
+    const langDropdown = document.getElementById('langDropdown');
+    document.querySelectorAll('.lang-option').forEach(opt=>{ opt.addEventListener('click',()=>{
+        let val=opt.getAttribute('data-lang');
+        if(val==='en') resetEnglish();
+        else if(val==='zh-classical') applyClassical();
+        else if(val==='google') loadGoogleTranslate();
+        langDropdown.classList.remove('show');
+    });});
+    document.getElementById('langBtn').addEventListener('click',(e)=>{ e.stopPropagation(); langDropdown.classList.toggle('show'); });
+    document.addEventListener('click',(e)=>{ if(!document.getElementById('langBtn').contains(e.target) && !langDropdown.contains(e.target)) langDropdown.classList.remove('show'); });
+
+    function toggleAccPanel() { 
+        const panel = document.getElementById('accPanel');
+        panel.classList.toggle('show');
+    }
+    let isMouseOn = false;
+    function toggleCursorAssist(on) {
+        isMouseOn = on;
+        const h = document.getElementById('cursor-highlight');
+        h.style.display = on ? 'block' : 'none';
+        document.body.style.cursor = on ? 'none' : 'default';
+        updateCursorStyle();
+    }
+    function updateCursorStyle() {
+        const [bg, border] = document.getElementById('cursor-color-select').value.split('|');
+        document.getElementById('cursor-highlight').style.background = bg;
+        document.getElementById('cursor-highlight').style.borderColor = border;
+    }
+    document.addEventListener('mousemove', e => {
+        if(!isMouseOn) return;
+        const h = document.getElementById('cursor-highlight');
+        h.style.left = e.clientX + 'px'; h.style.top = e.clientY + 'px';
+    });
+</script>
+</body>
+</html>
