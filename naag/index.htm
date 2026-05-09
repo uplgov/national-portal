@@ -114,10 +114,10 @@
             visibility: hidden;
             transition: opacity 0.5s ease;
         }
-        body.modal-open {
+        body.modal-open, body.menu-open {
             overflow: hidden;
         }
-        body.modal-open .blur-background {
+        body.modal-open .blur-background, body.menu-open .blur-background {
             filter: blur(4px) brightness(0.92);
             transition: filter 0.3s ease;
             pointer-events: none;
@@ -219,8 +219,23 @@
             background-color: #f5f5f5;
             border-color: #888;
         }
-        .lang-switch {
-            position: relative;
+        .right-tools {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+        .acc-icon-btn {
+            background: none;
+            border: 1px solid #cccccc;
+            padding: 0.5rem 0.8rem;
+            cursor: pointer;
+            font-size: 1.1rem;
+            border-radius: 0px;
+            filter: grayscale(1);
+            transition: filter 0.2s ease;
+        }
+        .acc-icon-btn:hover {
+            filter: grayscale(0);
         }
         .lang-btn {
             background: #ffffff;
@@ -233,6 +248,9 @@
         }
         .lang-btn:hover {
             background-color: #f5f5f5;
+        }
+        .lang-switch {
+            position: relative;
         }
         .lang-dropdown {
             position: absolute;
@@ -323,6 +341,41 @@
         .menu-item:hover {
             background-color: #f5f5f5;
         }
+        .acc-panel {
+            position: fixed;
+            top: 100px;
+            right: 20px;
+            width: 280px;
+            background: white;
+            border: 1px solid #ddd;
+            padding: 20px;
+            z-index: 2000;
+            opacity: 0;
+            visibility: hidden;
+            transform: translateX(20px);
+            transition: opacity 0.2s ease, visibility 0.2s ease, transform 0.2s ease;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+        }
+        .acc-panel.show {
+            opacity: 1;
+            visibility: visible;
+            transform: translateX(0);
+        }
+        .acc-item {
+            margin-bottom: 15px;
+        }
+        .acc-item label {
+            display: block;
+            font-size: 0.8rem;
+            color: #555;
+            margin-bottom: 5px;
+        }
+        .acc-select {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ccc;
+            font-family: inherit;
+        }
         .nav-links {
             display: flex;
             gap: 1.5rem;
@@ -352,7 +405,7 @@
             min-width: 240px;
         }
         .hero-title {
-            font-size: 2.8rem;
+            font-size: 3.2rem;
             font-weight: 700;
             line-height: 1.2;
             color: #000;
@@ -431,7 +484,7 @@
             color: #4a4a4a;
         }
         .partners-section {
-            margin: 3rem 0 2rem;
+            margin: 4rem 0 2rem;
         }
         .partners-title {
             font-size: 1.2rem;
@@ -445,7 +498,9 @@
         .marquee-container {
             width: 100%;
             overflow-x: hidden;
-            margin-bottom: 1.2rem;
+            margin-bottom: 1.5rem;
+            background: #ffffff;
+            position: relative;
         }
         .marquee {
             display: flex;
@@ -460,6 +515,7 @@
             height: 80px;
             margin: 0 1rem;
             background: #fff;
+            flex-shrink: 0;
         }
         .marquee-item img {
             max-width: 100%;
@@ -470,95 +526,62 @@
         .footer {
             margin-top: 3rem;
             border-top: 1px solid #eaeaea;
-            padding: 2rem 0 2.5rem;
-            text-align: center;
-            font-size: 0.75rem;
-            color: #5a5a5a;
-            display: flex;
-            flex-direction: column;
-            gap: 1rem;
+            padding: 2rem 0 2rem;
         }
-        .footer-buttons {
+        .footer-content {
             display: flex;
+            flex-wrap: wrap;
+            justify-content: space-between;
             gap: 2rem;
-            justify-content: center;
+            margin-bottom: 2rem;
         }
-        .footer-btn {
+        .footer-section {
+            flex: 1;
+            min-width: 0;
+            text-align: left;
+        }
+        .footer-section h4 {
+            font-size: 0.8rem;
+            margin-bottom: 0.8rem;
+            color: #333;
+            font-weight: 600;
+        }
+        .footer-section button {
+            display: block;
             background: none;
             border: none;
-            font-size: 0.85rem;
+            font-size: 0.75rem;
+            color: #5a5a5a;
+            cursor: pointer;
+            padding: 0.3rem 0;
             text-decoration: underline;
-            cursor: pointer;
         }
-        .acc-icon-btn {
-            background: none;
-            border: 1px solid #cccccc;
-            padding: 0.5rem 0.8rem;
-            cursor: pointer;
-            font-size: 1.1rem;
-            border-radius: 0px;
-            filter: grayscale(1);
-            transition: filter 0.2s ease;
+        .footer-section button:hover {
+            color: #000;
         }
-        .acc-icon-btn:hover {
-            filter: grayscale(0);
+        .footer-copyright {
+            text-align: center;
+            font-size: 0.7rem;
+            color: #8a8a8a;
+            margin-top: 1.5rem;
+            padding-top: 1.5rem;
+            border-top: 1px solid #eaeaea;
         }
-        .acc-panel {
-            position: fixed;
-            top: 100px;
-            right: 20px;
-            width: 280px;
-            background: white;
-            border: 1px solid #ddd;
-            padding: 20px;
-            z-index: 2000;
-            opacity: 0;
-            visibility: hidden;
-            transform: translateX(20px);
-            transition: opacity 0.2s ease, visibility 0.2s ease, transform 0.2s ease;
-            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+        .footer-logo {
+            text-align: center;
+            margin-top: 1rem;
         }
-        .acc-panel.show {
-            opacity: 1;
-            visibility: visible;
-            transform: translateX(0);
-        }
-        .acc-item {
-            margin-bottom: 15px;
-        }
-        .acc-item label {
-            display: block;
-            font-size: 0.8rem;
-            color: #555;
-            margin-bottom: 5px;
-        }
-        .acc-select {
-            width: 100%;
-            padding: 8px;
-            border: 1px solid #ccc;
-            font-family: inherit;
-        }
-        .tool-btn {
-            background: #ffffff;
-            border: 1px solid #cccccc;
-            padding: 0.5rem 1rem;
-            font-family: 'Arial', sans-serif;
-            font-size: 0.9rem;
-            cursor: pointer;
-            border-radius: 0px;
-        }
-        .tool-btn:hover {
-            background-color: #f5f5f5;
-        }
-        .nav-tools {
-            display: flex;
-            gap: 10px;
-            align-items: center;
+        .footer-logo img {
+            height: 32px;
+            width: auto;
+            opacity: 0.5;
         }
         @media (max-width: 780px) {
-            .hero-title { font-size: 2rem; }
+            .hero-title { font-size: 2.2rem; }
             .mission-text { max-width: 100%; }
             .container { padding: 0 1.25rem; }
+            .footer-content { flex-direction: column; text-align: center; }
+            .footer-section { text-align: center; }
         }
     </style>
 </head>
@@ -579,15 +602,15 @@
                     <button class="logo-button" id="logoHomeBtn"><img class="logo-img" src="https://uplgov.github.io/national-portal/naag/icons/grayscale.png" alt="NAAG" draggable="false"></button>
                     <button class="menu-btn" id="menuBtn">Menu</button>
                 </div>
-                <div class="nav-tools">
+                <div class="right-tools">
                     <button class="acc-icon-btn" id="accIconBtn" onclick="toggleAccPanel()">♿️</button>
-                    <button class="tool-btn" id="langBtn">LANGUAGE ▾</button>
-                </div>
-                <div class="lang-switch">
-                    <div class="lang-dropdown" id="langDropdown">
-                        <div class="lang-option" data-lang="en">British English</div>
-                        <div class="lang-option" data-lang="zh-classical">華夏文言</div>
-                        <div class="lang-option" data-lang="google">Google Translate</div>
+                    <div class="lang-switch">
+                        <button class="lang-btn" id="langBtn">LANGUAGE ▾</button>
+                        <div class="lang-dropdown" id="langDropdown">
+                            <div class="lang-option" data-lang="en">British English</div>
+                            <div class="lang-option" data-lang="zh-classical">華夏文言</div>
+                            <div class="lang-option" data-lang="google">Google Translate</div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -638,7 +661,7 @@
             <div class="button-grid" id="diveInGrid">
                 <div class="action-card" data-link="https://uplgov.github.io/national-portal/naag/projects/projects-list.htm"><div class="action-main">Latest Project</div><div class="action-sub">See what we're working on.</div></div>
                 <div class="action-card" data-link="https://uplgov.github.io/national-portal/naag/projects/leadership.htm"><div class="action-main">Our Leadership</div><div class="action-sub">Meet those who guide us.</div></div>
-                <div class="action-card" data-link="https://uplgov.github.io/national-portal/naag/icons/news.htm"><div class="action-main">News</div><div class="action-sub">Keep Updated</div></div>
+                <div class="action-card" data-link="https://uplgov.github.io/national-portal/naag/icons/news.htm"><div class="action-main">News</div><div class="action-sub">Keep updated.</div></div>
             </div>
 
             <div class="partners-section">
@@ -649,11 +672,32 @@
         </div>
         <div class="container">
             <div class="footer">
-                <div class="footer-buttons">
-                    <button class="footer-btn" id="licenceBtn">Licence</button>
-                    <button class="footer-btn" id="privacyBtn">Privacy</button>
+                <div class="footer-content">
+                    <div class="footer-section">
+                        <h4>Website</h4>
+                        <button class="footer-btn" id="licenceBtn">Licence</button>
+                        <button class="footer-btn" id="privacyBtn">Privacy</button>
+                    </div>
+                    <div class="footer-section">
+                        <h4>NAAG Value</h4>
+                        <button class="footer-btn" id="educationBtn">Education</button>
+                        <button class="footer-btn" id="environmentBtn">Environment</button>
+                    </div>
+                    <div class="footer-section">
+                        <h4>Links</h4>
+                        <button class="footer-link-btn" data-link="https://uplgov.github.io/national-portal">UPL Government</button>
+                        <button class="footer-link-btn" data-link="https://uplgov.github.io/wundertrium/index.htm">The Wundertrium Laboratory</button>
+                        <button class="footer-link-btn" data-link="https://massivedynamic.com">Massive Dynamic</button>
+                        <button class="footer-link-btn" data-link="https://umbrella.inc">Umbrella Corporation</button>
+                        <button class="footer-link-btn" data-link="https://cyberdynesystems.ai">CYBERDYNE SYSTEMS</button>
+                    </div>
                 </div>
-                <div>© 2026–3019 National Administration for Agriculture & Genetic Resources (NAAG)</div>
+                <div class="footer-copyright">
+                    © 2026–3019 National Administration for Agriculture & Genetic Resources (NAAG)
+                </div>
+                <div class="footer-logo">
+                    <img src="https://uplgov.github.io/national-portal/naag/icons/grayscale.png" alt="NAAG" draggable="false">
+                </div>
             </div>
         </div>
     </div>
@@ -669,6 +713,7 @@
             <div class="menu-item" data-link="https://uplgov.github.io/national-portal/naag/legacy.htm">Legacy</div>
             <div class="menu-item" data-link="https://uplgov.github.io/national-portal/naag/projects/leadership.htm">Leadership</div>
             <div class="menu-item" data-link="https://uplgov.github.io/national-portal/naag/icons/news.htm">News</div>
+            <div class="menu-item" data-link="https://uplgov.github.io/national-portal/naag/opportunities.htm">Opportunities</div>
         </div>
         <div class="menu-section">
             <div class="menu-section-title">Services</div>
@@ -731,63 +776,112 @@
     function makeAllImagesUndraggable() { document.querySelectorAll('img').forEach(i => { i.setAttribute('draggable','false'); i.addEventListener('dragstart',e=>e.preventDefault()); }); }
     loadAll();
 
-    class SmoothMarquee {
-        constructor(containerEl, marqueeEl, dir) {
-            this.container = containerEl; this.marquee = marqueeEl; this.dir = dir; this.pos = 0; this.speed = 0; this.targetSpeed = 2.2; this.accel=0.12; this.decel=0.12; this.hover=false; this.raf=null;
-            this.fill();
+    let marquee1Running = true, marquee2Running = true;
+    let marquee1Anim, marquee2Anim;
+    let marquee1Pos = 0, marquee2Pos = 0;
+    let marquee1Hover = false, marquee2Hover = false;
+    let marquee1Width = 0, marquee2Width = 0;
+    const SPEED = 2.2;
+    const ACCEL = 0.12;
+    const DECEL = 0.12;
+
+    function buildMarquee(containerId, marqueeId, direction, isSecond) {
+        const container = document.getElementById(containerId);
+        const marquee = document.getElementById(marqueeId);
+        if (!container || !marquee) return null;
+        marquee.innerHTML = '';
+        const triple = [...marqueeImgList, ...marqueeImgList, ...marqueeImgList];
+        triple.forEach(src => {
+            const div = document.createElement('div');
+            div.className = 'marquee-item';
+            const img = document.createElement('img');
+            img.src = src;
+            img.draggable = false;
+            img.style.maxWidth = '100%';
+            img.style.maxHeight = '70px';
+            div.appendChild(img);
+            marquee.appendChild(div);
+        });
+        
+        let currentSpeed = SPEED;
+        let hoverState = false;
+        let pos = 0;
+        let raf = null;
+        
+        function getTotalWidth() {
+            let w = 0;
+            for (let i = 0; i < marqueeImgList.length; i++) {
+                if (marquee.children[i]) w += marquee.children[i].offsetWidth + 32;
+            }
+            return w;
         }
-        fill() {
-            this.marquee.innerHTML = '';
-            [...marqueeImgList,...marqueeImgList,...marqueeImgList].forEach(src => {
-                let d = document.createElement('div'); d.className='marquee-item';
-                let i = new Image(); i.src=src; i.draggable=false; i.style.maxWidth='100%'; i.style.maxHeight='70px';
-                d.appendChild(i); this.marquee.appendChild(d);
-            });
-            this.singleWidth=null;
+        
+        function step() {
+            if (!marquee.isConnected) return;
+            if (hoverState) {
+                if (currentSpeed > 0) currentSpeed = Math.max(0, currentSpeed - DECEL);
+                else if (currentSpeed < 0) currentSpeed = Math.min(0, currentSpeed + DECEL);
+            } else {
+                if (currentSpeed < SPEED) currentSpeed = Math.min(SPEED, currentSpeed + ACCEL);
+                else if (currentSpeed > SPEED) currentSpeed = Math.max(SPEED, currentSpeed - ACCEL);
+            }
+            let delta = direction === 'left' ? -currentSpeed : currentSpeed;
+            pos += delta;
+            const totalW = getTotalWidth();
+            if (totalW > 0) {
+                if (direction === 'left') {
+                    if (pos <= -totalW * 2) pos += totalW;
+                    if (pos > 0) pos = -totalW;
+                } else {
+                    if (pos >= totalW) pos -= totalW;
+                    if (pos < 0) pos = 0;
+                }
+            }
+            marquee.style.transform = `translateX(${pos}px)`;
+            raf = requestAnimationFrame(step);
         }
-        getSingle() { if(!this.singleWidth){ let w=0; for(let i=0;i<marqueeImgList.length;i++) w+=this.marquee.children[i].offsetWidth+32; this.singleWidth=w; } return this.singleWidth; }
-        step() {
-            if(!this.marquee.isConnected) return;
-            if(this.hover) this.speed = Math.abs(this.speed)<0.02?0: (this.speed>0? Math.max(0, this.speed-this.decel): Math.min(0, this.speed+this.decel));
-            else this.speed = this.speed < this.targetSpeed ? Math.min(this.targetSpeed, this.speed+this.accel) : Math.max(this.targetSpeed, this.speed-this.accel);
-            let delta = this.dir==='left' ? -this.speed : this.speed;
-            this.pos += delta; let sw = this.getSingle();
-            if(this.dir==='left'){ if(this.pos <= -sw*2) this.pos += sw; if(this.pos>0) this.pos = -sw; }
-            else { if(this.pos >= sw) this.pos -= sw; if(this.pos<0) this.pos = 0; }
-            this.marquee.style.transform = `translateX(${this.pos}px)`;
-            this.raf = requestAnimationFrame(()=>this.step());
-        }
-        start(){ this.raf = requestAnimationFrame(()=>this.step()); }
-        setHover(h){ this.hover = h; }
-    }
-    let leftMarq, rightMarq;
-    function initMarquees() {
-        let c1=document.getElementById('marqueeContainer1'), m1=document.getElementById('marquee1');
-        let c2=document.getElementById('marqueeContainer2'), m2=document.getElementById('marquee2');
-        if(!c1 || !m1) return;
-        leftMarq = new SmoothMarquee(c1,m1,'left'); rightMarq = new SmoothMarquee(c2,m2,'right');
-        leftMarq.start(); rightMarq.start();
-        const setBoth = (state)=>{ leftMarq?.setHover(state); rightMarq?.setHover(state); };
-        c1.addEventListener('mouseenter',()=>setBoth(true)); c1.addEventListener('mouseleave',()=>setBoth(false));
-        c2.addEventListener('mouseenter',()=>setBoth(true)); c2.addEventListener('mouseleave',()=>setBoth(false));
+        
+        function start() { if (raf) cancelAnimationFrame(raf); raf = requestAnimationFrame(step); }
+        function setHover(h) { hoverState = h; }
+        start();
+        container.addEventListener('mouseenter', () => setHover(true));
+        container.addEventListener('mouseleave', () => setHover(false));
+        return { setHover: setHover };
     }
 
-    const filterTargets = document.querySelectorAll('#mainFilterTarget, #mainFilterTarget2, #enterCommonsGrid, #diveInGrid, .partners-section, .footer');
+    let leftMarqueeCtrl, rightMarqueeCtrl;
+    function initMarquees() {
+        leftMarqueeCtrl = buildMarquee('marqueeContainer1', 'marquee1', 'left', false);
+        rightMarqueeCtrl = buildMarquee('marqueeContainer2', 'marquee2', 'right', true);
+        const marqueeContainer1 = document.getElementById('marqueeContainer1');
+        const marqueeContainer2 = document.getElementById('marqueeContainer2');
+        function setBothHover(state) {
+            if (leftMarqueeCtrl) leftMarqueeCtrl.setHover(state);
+            if (rightMarqueeCtrl) rightMarqueeCtrl.setHover(state);
+        }
+        marqueeContainer1.addEventListener('mouseenter', () => setBothHover(true));
+        marqueeContainer1.addEventListener('mouseleave', () => setBothHover(false));
+        marqueeContainer2.addEventListener('mouseenter', () => setBothHover(true));
+        marqueeContainer2.addEventListener('mouseleave', () => setBothHover(false));
+    }
+
+    const filterTargets = document.querySelectorAll('#mainFilterTarget, #mainFilterTarget2, #enterCommonsGrid, #diveInGrid, .partners-section');
     function applyFilters() {
         const contrast = document.getElementById('con-range').value;
         const grayscale = document.getElementById('gray-range').value;
         const saturate = document.getElementById('sat-range').value;
         const filterValue = `contrast(${contrast}) grayscale(${grayscale}) saturate(${saturate})`;
-        filterTargets.forEach(el => { el.style.filter = filterValue; });
-        document.querySelector('.hero-right img').style.filter = filterValue;
+        filterTargets.forEach(el => { if(el) el.style.filter = filterValue; });
+        const heroImg = document.querySelector('.hero-image');
+        if(heroImg) heroImg.style.filter = filterValue;
         document.querySelectorAll('.marquee-item img').forEach(img => { img.style.filter = `grayscale(20%) ${filterValue}`; });
     }
 
     const modal = document.getElementById('infoModal');
     const modalBodyDiv = document.getElementById('modalBody');
     const blurContainer = document.querySelector('.blur-background');
-    function openModal(html) { modalBodyDiv.innerHTML = html; modal.style.display='flex'; document.body.classList.add('modal-open'); blurContainer.style.filter='blur(4px) brightness(0.92)'; }
-    function closeModal() { document.body.classList.remove('modal-open'); blurContainer.style.filter='none'; modal.style.display='none'; }
+    function openModal(html) { modalBodyDiv.innerHTML = html; modal.style.display='flex'; document.body.classList.add('modal-open'); }
+    function closeModal() { document.body.classList.remove('modal-open'); modal.style.display='none'; }
     document.getElementById('closeModalBtn').addEventListener('click', closeModal);
     modal.addEventListener('click',(e)=>{ if(e.target===modal) closeModal(); });
 
@@ -800,14 +894,19 @@
     document.getElementById('learnMoreBtn').onclick = ()=>openModal(aboutFull);
     document.getElementById('licenceBtn').onclick = ()=>openModal(licenceTxt);
     document.getElementById('privacyBtn').onclick = ()=>openModal(privacyTxt);
+    document.getElementById('educationBtn').onclick = ()=>window.location.href="https://uplgov.github.io/national-portal/naag/edu.htm";
+    document.getElementById('environmentBtn').onclick = ()=>window.location.href="https://uplgov.github.io/national-portal/naag/environment.htm";
     document.getElementById('newsNavBtn').onclick = ()=>window.location.href="https://uplgov.github.io/national-portal/naag/icons/news.htm";
     document.getElementById('contactNavBtn').onclick = ()=>window.location.href="https://uplgov.github.io/national-portal/naag/icons/contact.htm";
     document.querySelectorAll('.action-card').forEach(c=>c.addEventListener('click',()=>window.location.href=c.getAttribute('data-link')));
+    document.querySelectorAll('.footer-link-btn').forEach(btn=>{
+        btn.addEventListener('click',()=>{ window.location.href = btn.getAttribute('data-link'); });
+    });
 
     const menuOverlay = document.getElementById('menuOverlay');
     const menuBtn = document.getElementById('menuBtn');
-    function openMenu() { menuOverlay.classList.add('open'); }
-    function closeMenu() { menuOverlay.classList.remove('open'); }
+    function openMenu() { menuOverlay.classList.add('open'); document.body.classList.add('menu-open'); }
+    function closeMenu() { menuOverlay.classList.remove('open'); document.body.classList.remove('menu-open'); }
     menuBtn.addEventListener('click', (e)=>{ e.stopPropagation(); openMenu(); });
     menuOverlay.addEventListener('click', (e)=>{ if(e.target === menuOverlay) closeMenu(); });
     document.querySelectorAll('#menuOverlay .menu-item').forEach(item => {
